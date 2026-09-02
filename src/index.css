@@ -1,0 +1,526 @@
+@charset "UTF-8";
+
+/* ==========================================================================
+   Ideal Arts Classes - Design System & Tokens
+   Theme: Deep Navy (#1E293B) & Vibrant Teal (#0D9488) with Material 3 Aesthetics
+   Tagline: "कला ज्ञानं जीवनम्"
+   ========================================================================== */
+
+:root {
+  /* Brand Core Colors */
+  --color-primary-navy: #1E293B;
+  --color-primary-navy-dark: #0F172A;
+  --color-primary-navy-light: #334155;
+  --color-accent-teal: #0D9488;
+  --color-accent-teal-hover: #0F766E;
+  --color-accent-teal-light: #14B8A6;
+  --color-accent-mint: #2DD4BF;
+  --color-accent-teal-tint: #F0FDFA;
+  --color-accent-coral: #FF6B4A;
+  --color-accent-amber: #F59E0B;
+  
+  /* Neutral Surfaces - Light Mode */
+  --bg-app: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-surface-subtle: #F1F5F9;
+  --bg-surface-elevated: #FFFFFF;
+  --border-subtle: #E2E8F0;
+  --border-focus: #0D9488;
+  
+  /* Text & Content */
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary: #94A3B8;
+  --text-on-navy: #FFFFFF;
+  --text-on-teal: #FFFFFF;
+  --text-teal-accent: #0D9488;
+
+  /* Typography */
+  --font-sans: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-devanagari: 'Noto Sans Devanagari', 'Rozha One', 'Poppins', sans-serif;
+
+  /* Elevation Shadows (Material 3 inspired) */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 2px 6px -1px rgba(15, 23, 42, 0.06), 0 1px 3px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 6px 16px -2px rgba(15, 23, 42, 0.08), 0 3px 6px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 12px 28px -4px rgba(15, 23, 42, 0.12), 0 6px 12px -4px rgba(15, 23, 42, 0.06);
+  --shadow-teal: 0 8px 20px -3px rgba(13, 148, 136, 0.28);
+  --shadow-coral: 0 8px 20px -3px rgba(255, 107, 74, 0.25);
+  
+  /* Border Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Transition speeds */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Dark Mode Theme */
+.dark-theme {
+  --bg-app: #090D16;
+  --bg-surface: #131B2E;
+  --bg-surface-subtle: #1E293B;
+  --bg-surface-elevated: #243147;
+  --border-subtle: #243147;
+  --border-focus: #14B8A6;
+  
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-tertiary: #64748B;
+  --text-teal-accent: #2DD4BF;
+  
+  --color-accent-teal-tint: rgba(13, 148, 136, 0.15);
+  --shadow-sm: 0 2px 8px 0 rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 20px -2px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 32px -4px rgba(0, 0, 0, 0.6);
+}
+
+/* Base Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  font-family: var(--font-body);
+  background-color: #0c111c;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Typography Helpers */
+.font-display {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.devanagari-tagline {
+  font-family: var(--font-devanagari);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* Presentation Canvas Wrapper (Desktop Preview) */
+.simulator-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: radial-gradient(circle at top, #1e293b 0%, #0a0f1d 75%, #05070d 100%);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Studio Ambient Light glow in background */
+.simulator-ambient-glow {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle, rgba(13, 148, 136, 0.15) 0%, rgba(30, 41, 59, 0.05) 50%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Top Toolbar for Preview & Device Controls */
+.preview-toolbar {
+  z-index: 10;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  max-width: 900px;
+  padding: 12px 20px;
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.toolbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar-brand-title {
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-tagline-badge {
+  font-family: var(--font-devanagari);
+  font-size: 12px;
+  font-weight: 600;
+  color: #2DD4BF;
+  background: rgba(13, 148, 136, 0.2);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #E2E8F0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 6px 14px;
+  border-radius: var(--radius-lg);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.tool-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.tool-btn.active {
+  background: var(--color-accent-teal);
+  color: #FFFFFF;
+  border-color: var(--color-accent-teal-light);
+  box-shadow: var(--shadow-teal);
+}
+
+/* ==========================================================================
+   Android Phone Device Frame (Pixel 8 / Galaxy S24 Pro Spec)
+   ========================================================================== */
+.android-phone-frame {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  max-width: 412px; /* Standard Android Viewport */
+  height: 870px;
+  background: var(--bg-app);
+  border-radius: 46px;
+  box-shadow: 0 0 0 12px #1E293B, 0 0 0 14px #334155, 0 25px 60px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: var(--transition-smooth);
+}
+
+/* In fullscreen / frameless mode */
+.android-phone-frame.frameless {
+  max-width: 460px;
+  height: 92vh;
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg);
+}
+
+/* Android Hardware Bezel Buttons (Visual Accent) */
+.android-phone-frame::before {
+  content: '';
+  position: absolute;
+  top: 140px;
+  right: -17px;
+  width: 4px;
+  height: 60px;
+  background: #475569;
+  border-radius: 4px;
+  z-index: 20;
+}
+
+.android-phone-frame::after {
+  content: '';
+  position: absolute;
+  top: 220px;
+  right: -17px;
+  width: 4px;
+  height: 95px;
+  background: #475569;
+  border-radius: 4px;
+  z-index: 20;
+}
+
+/* Android System Status Bar */
+.android-status-bar {
+  height: 38px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 50;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.status-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-punch-hole {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  background: #000000;
+  border-radius: 50%;
+  box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.status-right {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Android Screen Viewport Container */
+.android-screen-content {
+  flex: 1;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  /* Custom smooth scrollbar */
+  scrollbar-width: none;
+}
+.android-screen-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* Android System Gesture Navigation Bar */
+.android-gesture-bar {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  flex-shrink: 0;
+  z-index: 40;
+}
+
+.gesture-pill {
+  width: 72px;
+  height: 4px;
+  background: var(--text-tertiary);
+  border-radius: var(--radius-full);
+  opacity: 0.6;
+}
+
+/* ==========================================================================
+   Bottom Navigation Bar (Material 3 Handcrafted)
+   ========================================================================== */
+.bottom-nav-container {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 30;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  transition: var(--transition-fast);
+  position: relative;
+}
+
+.nav-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  transition: var(--transition-fast);
+}
+
+.nav-item.active .nav-icon-wrapper {
+  background: var(--color-accent-teal-tint);
+  color: var(--color-accent-teal);
+}
+
+.nav-item.active {
+  color: var(--color-accent-teal);
+}
+
+.nav-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.live-badge-dot {
+  position: absolute;
+  top: 2px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: #EF4444;
+  border-radius: 50%;
+  border: 1.5px solid var(--bg-surface);
+  animation: pulseLive 1.5s infinite;
+}
+
+@keyframes pulseLive {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1.15); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* ==========================================================================
+   UI Components & Cards
+   ========================================================================== */
+
+/* Modern Card */
+.art-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-normal);
+  overflow: hidden;
+}
+
+.art-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: rgba(13, 148, 136, 0.3);
+}
+
+/* Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--color-accent-teal) 0%, #0F766E 100%);
+  color: #FFFFFF;
+  border: none;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-teal);
+  transition: var(--transition-fast);
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-surface-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-secondary:active {
+  transform: scale(0.97);
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-icon:hover {
+  background: var(--color-accent-teal-tint);
+  color: var(--color-accent-teal);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

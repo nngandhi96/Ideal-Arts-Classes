@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Circular Text Paths -->
+    <path id="topTextArc" d="M 80,250 A 170,170 0 1,1 420,250" fill="none" />
+    <path id="bottomTextArc" d="M 85,250 A 165,165 0 0,0 415,250" fill="none" />
+    
+    <!-- Gradients -->
+    <linearGradient id="brushGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155" />
+      <stop offset="100%" stop-color="#1E293B" />
+    </linearGradient>
+    <linearGradient id="paletteGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF7A59" />
+      <stop offset="100%" stop-color="#FF5252" />
+    </linearGradient>
+    <linearGradient id="bookGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D9488" />
+      <stop offset="100%" stop-color="#14B8A6" />
+    </linearGradient>
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1" />
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <circle cx="250" cy="250" r="240" fill="#FFFFFF" />
+
+  <!-- Outer Navy Border -->
+  <circle cx="250" cy="250" r="230" fill="none" stroke="#1E293B" stroke-width="16" />
+
+  <!-- Inner Teal Border -->
+  <circle cx="250" cy="250" r="208" fill="none" stroke="#0D9488" stroke-width="5" />
+
+  <!-- Upper Text: IDEAL ARTS CLASSES -->
+  <text font-family="'Poppins', 'Inter', -apple-system, sans-serif" font-size="34" font-weight="900" fill="#1E293B" letter-spacing="4">
+    <textPath href="#topTextArc" startOffset="50%" text-anchor="middle">
+      IDEAL ARTS CLASSES
+    </textPath>
+  </text>
+
+  <!-- Lower Text: कला ज्ञानं जीवनम् (Devanagari) -->
+  <text font-family="'Noto Sans Devanagari', 'Rozha One', 'Poppins', sans-serif" font-size="32" font-weight="800" fill="#1E293B" letter-spacing="2">
+    <textPath href="#bottomTextArc" startOffset="50%" text-anchor="middle">
+      कला ज्ञानं जीवनम्
+    </textPath>
+  </text>
+
+  <!-- Central Emblem Elements -->
+  <g id="center-icon" transform="translate(250, 240)">
+    
+    <!-- Paintbrush / Stylus -->
+    <line x1="-55" y1="-70" x2="10" y2="-5" stroke="#1E293B" stroke-width="14" stroke-linecap="round" />
+    
+    <!-- Palette Color Disc (Coral/Peach) -->
+    <circle cx="10" cy="-15" r="38" fill="url(#paletteGradient)" filter="url(#subtleShadow)" />
+    
+    <!-- Accent Color Dots -->
+    <circle cx="55" cy="-38" r="9" fill="#FB923C" />
+    <circle cx="75" cy="-18" r="6" fill="#F87171" />
+    <circle cx="-40" cy="8" r="7" fill="#0D9488" />
+
+    <!-- Open Book / Winged Foundation Structure -->
+    <path d="M -80,45 C -40,15 -10,35 0,20 C 10,35 40,15 80,45 L 80,72 C 40,42 10,62 0,48 C -10,62 -40,42 -80,72 Z" 
+          fill="none" stroke="#0D9488" stroke-width="12" stroke-linejoin="round" stroke-linecap="round" />
+    <path d="M -50,45 C -25,28 -5,40 0,33 C 5,40 25,28 50,45" 
+          fill="none" stroke="#99F6E4" stroke-width="5" stroke-linecap="round" />
+  </g>
+</svg>
