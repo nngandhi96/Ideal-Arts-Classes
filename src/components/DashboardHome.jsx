@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Bell, Play, Clock, Sparkles, ChevronRight, Video, 
   BookOpen, FileText, CheckSquare, Calendar, Users, 
   Flame, Award, ArrowUpRight, Radio, Landmark, Scale, 
   Globe2, Globe, Brain, Feather, Home, Music, Calculator, 
   Atom, Scroll, Languages, CheckCircle2, Target, PenTool,
-  Layers, Filter
+  Layers, Filter, Database, Check
 } from 'lucide-react';
 import { CLASSES_CONFIG, SUBJECTS_BY_CLASS } from '../data/curriculumData';
+import { isSupabaseConfigured, announcementService, liveClassService } from '../lib/supabaseClient';
 
 // Icon resolver helper
 const getSubjectIcon = (iconName) => {
@@ -39,6 +40,29 @@ export function DashboardHome({
   onOpenNotifications 
 }) {
   const [activeBanner, setActiveBanner] = useState(0);
+  const [supabaseAnnouncements, setSupabaseAnnouncements] = useState([]);
+  const [liveDbClasses, setLiveDbClasses] = useState([]);
+
+  useEffect(() => {
+    async function loadSupabaseData() {
+      if (!isSupabaseConfigured) return;
+      try {
+        const [announcementsRes, liveRes] = await Promise.all([
+          announcementService.getAnnouncements(selectedClass),
+          liveClassService.getLiveClasses(selectedClass)
+        ]);
+        if (announcementsRes.data && announcementsRes.data.length > 0) {
+          setSupabaseAnnouncements(announcementsRes.data);
+        }
+        if (liveRes.data && liveRes.data.length > 0) {
+          setLiveDbClasses(liveRes.data);
+        }
+      } catch (err) {
+        console.error('Failed to load Supabase data:', err);
+      }
+    }
+    loadSupabaseData();
+  }, [selectedClass]);
 
   const currentClassInfo = CLASSES_CONFIG.find(c => c.id === selectedClass) || CLASSES_CONFIG[0];
   const currentSubjects = SUBJECTS_BY_CLASS[selectedClass] || [];
@@ -195,6 +219,24 @@ export function DashboardHome({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {isSupabaseConfigured && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              fontSize: 10,
+              fontWeight: 700,
+              color: '#059669',
+              background: 'rgba(16, 185, 129, 0.1)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              padding: '4px 8px',
+              borderRadius: 9999
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+              <span>DB Connected</span>
+            </div>
+          )}
+
           <button
             onClick={onOpenNotifications}
             className="btn-icon"
@@ -215,6 +257,50 @@ export function DashboardHome({
           </button>
         </div>
       </div>
+
+      {/* Dynamic Supabase Live Announcement Card */}
+      {supabaseAnnouncements.length > 0 && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(13, 148, 136, 0.08) 100%)',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
+          borderRadius: 12,
+          padding: '10px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.08)'
+        }}>
+          <div style={{
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            background: '#10B981',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#FFFFFF',
+            flexShrink: 0
+          }}>
+            <Database size={16} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Supabase Live Notice
+              </span>
+              <span style={{ fontSize: 9, background: 'rgba(16, 185, 129, 0.2)', color: '#047857', padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>
+                {supabaseAnnouncements[0].priority?.toUpperCase()}
+              </span>
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {supabaseAnnouncements[0].title}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+              {supabaseAnnouncements[0].message}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2. Interactive Class Selector Bar (Class 12th, 11th, 10th, 9th, 8th) */}
       <div>

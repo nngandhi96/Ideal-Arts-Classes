@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Radio, Calendar, Clock, User, Play, Users, 
   Sparkles, ChevronRight, CheckCircle, Bell, Filter, Search,
-  Target, PenTool, BookOpen
+  Target, PenTool, BookOpen, Database
 } from 'lucide-react';
 import { CLASSES_CONFIG, SUBJECTS_BY_CLASS, LIVE_CLASSES_CONFIG } from '../data/curriculumData';
+import { isSupabaseConfigured, liveClassService } from '../lib/supabaseClient';
 
 export function LiveClassSection({ 
   selectedClass = '12th', 
@@ -15,6 +16,22 @@ export function LiveClassSection({
 }) {
   const [activeTab, setActiveTab] = useState('live_now'); // 'live_now' | 'today' | 'upcoming'
   const [selectedSubject, setSelectedSubject] = useState('All');
+  const [supabaseClasses, setSupabaseClasses] = useState([]);
+
+  useEffect(() => {
+    async function fetchDbClasses() {
+      if (!isSupabaseConfigured) return;
+      try {
+        const { data, error } = await liveClassService.getLiveClasses(selectedClass);
+        if (data && data.length > 0) {
+          setSupabaseClasses(data);
+        }
+      } catch (err) {
+        console.error('Error fetching Supabase live classes:', err);
+      }
+    }
+    fetchDbClasses();
+  }, [selectedClass]);
 
   const currentClassInfo = CLASSES_CONFIG.find(c => c.id === selectedClass) || CLASSES_CONFIG[0];
   const classSubjects = SUBJECTS_BY_CLASS[selectedClass] || [];
@@ -38,6 +55,48 @@ export function LiveClassSection({
       description: 'लाइव OMR पोल के साथ अध्याय 1 व 2 के 50 सबसे महत्वपूर्ण वस्तुनिष्ठ प्रश्नों का हल।'
     }
   ];
+
+  // Map Supabase classes to UI structure
+  const mappedDbLive = supabaseClasses
+    .filter(c => c.is_live)
+    .map(c => ({
+      id: c.id,
+      classId: c.class_id,
+      subjectId: c.subject_id,
+      status: 'live',
+      title: c.title_hindi ? `${c.title_hindi} (${c.title})` : c.title,
+      instructor: c.teacher_name,
+      instructorRole: `${c.subject_name} Faculty`,
+      instructorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
+      time: 'Live Stream Now',
+      duration: `${c.duration_mins || 60} Mins Session`,
+      viewersCount: c.viewers_count || 150,
+      formatType: 'objective',
+      badge: '🔴 SUPABASE LIVE',
+      thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80',
+      description: `${c.subject_name} live lecture conducted by ${c.teacher_name}.`
+    }));
+
+  const mappedDbUpcoming = supabaseClasses
+    .filter(c => !c.is_live)
+    .map(c => ({
+      id: c.id,
+      classId: c.class_id,
+      subjectId: c.subject_id,
+      status: 'upcoming_today',
+      title: c.title_hindi ? `${c.title_hindi} (${c.title})` : c.title,
+      instructor: c.teacher_name,
+      instructorRole: `${c.subject_name} Faculty`,
+      instructorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80',
+      time: new Date(c.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      countdown: 'Today Scheduled',
+      formatType: 'subjective',
+      badge: c.badge_label || 'DB Scheduled',
+      thumbnail: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&auto=format&fit=crop&q=80',
+      isReminded: false
+    }));
+
+  const displayLiveClasses = mappedDbLive.length > 0 ? mappedDbLive : liveClasses;
 
   const todayClasses = [
     {
@@ -73,6 +132,8 @@ export function LiveClassSection({
       isReminded: false
     }
   ];
+
+  const displayTodayClasses = mappedDbUpcoming.length > 0 ? [...mappedDbUpcoming, ...todayClasses] : todayClasses;
 
   const upcomingWeek = [
     {
@@ -117,6 +178,23 @@ export function LiveClassSection({
             <span className="devanagari-tagline" style={{ fontSize: 11, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
               कला ज्ञानं जीवनम्
             </span>
+            {isSupabaseConfigured && (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                fontSize: 10,
+                fontWeight: 700,
+                color: '#10B981',
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                padding: '2px 8px',
+                borderRadius: 9999
+              }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981' }} />
+                <span>Supabase Sync</span>
+              </span>
+            )}
           </div>
           <h2 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
             Live Lecture Studios
@@ -182,8 +260,8 @@ export function LiveClassSection({
         border: '1px solid var(--border-subtle)'
       }}>
         {[
-          { id: 'live_now', label: 'Live Now (1)', isLive: true },
-          { id: 'today', label: 'Today (2)', isLive: false },
+          { id: 'live_now', label: `Live Now (${displayLiveClasses.length})`, isLive: true },
+          { id: 'today', label: `Today (${displayTodayClasses.length})`, isLive: false },
           { id: 'upcoming', label: 'Upcoming Week', isLive: false }
         ].map(tab => (
           <button
@@ -216,7 +294,7 @@ export function LiveClassSection({
       {/* Active Tab Content */}
       {activeTab === 'live_now' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {liveClasses.map(session => (
+          {displayLiveClasses.map(session => (
             <div 
               key={session.id}
               className="art-card"
@@ -371,7 +449,7 @@ export function LiveClassSection({
       {/* Today's Schedule */}
       {activeTab === 'today' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {todayClasses.map(item => (
+          {displayTodayClasses.map(item => (
             <div key={item.id} className="art-card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{
