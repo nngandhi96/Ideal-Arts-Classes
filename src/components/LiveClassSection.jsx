@@ -1,83 +1,100 @@
 import React, { useState } from 'react';
 import { 
   Radio, Calendar, Clock, User, Play, Users, 
-  Sparkles, ChevronRight, CheckCircle, Bell, Filter, Search 
+  Sparkles, ChevronRight, CheckCircle, Bell, Filter, Search,
+  Target, PenTool, BookOpen
 } from 'lucide-react';
+import { CLASSES_CONFIG, SUBJECTS_BY_CLASS, LIVE_CLASSES_CONFIG } from '../data/curriculumData';
 
-export function LiveClassSection({ onOpenLiveRoom }) {
+export function LiveClassSection({ 
+  selectedClass = '12th', 
+  onSelectClass, 
+  selectedMode = 'all', 
+  onSelectMode, 
+  onOpenLiveRoom 
+}) {
   const [activeTab, setActiveTab] = useState('live_now'); // 'live_now' | 'today' | 'upcoming'
-  const [selectedMedium, setSelectedMedium] = useState('All');
+  const [selectedSubject, setSelectedSubject] = useState('All');
 
-  const mediums = ['All', 'Sketching', 'Watercolor', 'Acrylic & Oil', 'Indian Heritage', 'Art Theory'];
+  const currentClassInfo = CLASSES_CONFIG.find(c => c.id === selectedClass) || CLASSES_CONFIG[0];
+  const classSubjects = SUBJECTS_BY_CLASS[selectedClass] || [];
 
   const liveClasses = [
     {
-      id: 'live-101',
+      id: 'live-hist-12',
+      classId: '12th',
+      subjectId: 'history',
       status: 'live',
-      title: 'Perspective Drawing & Vanishing Points in Architectural Art',
-      instructor: 'Prof. Ramesh Kulkarni',
-      instructorRole: 'Head of Fine Arts Faculty',
+      title: 'हड़प्पा सभ्यता & मौर्य साम्राज्य: 50 Super VVI Objective MCQ Marathon (OMR Poll)',
+      instructor: 'Prof. Anand Kumar',
+      instructorRole: 'Head Faculty - History',
       instructorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
-      time: 'Started 25 mins ago',
-      duration: '90 Mins Session',
-      viewersCount: 142,
-      medium: 'Sketching',
-      thumbnail: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&auto=format&fit=crop&q=80',
-      description: 'Master 1-point, 2-point, and atmospheric perspective for indoor and outdoor landscapes.',
-      hasNotes: true
+      time: 'Started 20 mins ago',
+      duration: '60 Mins Session',
+      viewersCount: 238,
+      formatType: 'objective',
+      badge: 'वस्तुनिष्ठ (MCQ) LIVE',
+      thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80',
+      description: 'लाइव OMR पोल के साथ अध्याय 1 व 2 के 50 सबसे महत्वपूर्ण वस्तुनिष्ठ प्रश्नों का हल।'
     }
   ];
 
   const todayClasses = [
     {
-      id: 'today-201',
+      id: 'today-pol-12',
+      classId: '12th',
+      subjectId: 'polscience',
       status: 'upcoming_today',
-      title: 'Watercolour Transparency & Brushwork Dynamics',
-      instructor: 'Smt. Ananya Sen',
-      instructorRole: 'Master Watercolourist',
+      title: 'शीत युद्ध का दौर: 5-अंकों वाले दीर्घ उत्तरीय प्रश्नों का सटीक उत्तर कैसे लिखें?',
+      instructor: 'Dr. Rajeshwar Mishra',
+      instructorRole: 'Senior Faculty - Political Science',
       instructorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80',
       time: '04:30 PM Today',
-      countdown: 'Starts in 1h 45m',
-      medium: 'Watercolor',
-      thumbnail: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=600&auto=format&fit=crop&q=80',
+      countdown: 'Starts in 1h 15m',
+      formatType: 'subjective',
+      badge: 'विषयनिष्ठ (Subjective)',
+      thumbnail: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&auto=format&fit=crop&q=80',
       isReminded: true
     },
     {
-      id: 'today-202',
+      id: 'today-hin-12',
+      classId: '12th',
+      subjectId: 'hindi',
       status: 'upcoming_today',
-      title: 'Human Anatomy & Gesture Drawing Practice',
-      instructor: 'Prof. Ramesh Kulkarni',
-      instructorRole: 'Head of Fine Arts Faculty',
+      title: 'दिगंत भाग 2 - पद खंड (सूरदास & तुलसीदास) वस्तुनिष्ठ प्रश्न अभ्यास',
+      instructor: 'Pandit Vidyadhar Shastri',
+      instructorRole: 'HOD - Hindi Literature',
       instructorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
-      time: '07:00 PM Today',
-      countdown: 'Starts in 4h 15m',
-      medium: 'Sketching',
-      thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80',
+      time: '06:30 PM Today',
+      countdown: 'Starts in 3h 15m',
+      formatType: 'objective',
+      badge: 'वस्तुनिष्ठ (MCQ)',
+      thumbnail: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=600&auto=format&fit=crop&q=80',
       isReminded: false
     }
   ];
 
   const upcomingWeek = [
     {
-      id: 'up-301',
-      title: 'Classical Madhubani & Warli Art Traditions',
-      instructor: 'Dr. Meera Chitrakar',
+      id: 'up-mai-12',
+      title: 'मैथिली 100 अंक: विद्यापति पदावली ओ गद्य-पद्य व्याख्या',
+      instructor: 'Acharya Ramanath Jha',
       time: 'Tomorrow, 11:00 AM',
-      medium: 'Indian Heritage',
+      badge: 'मैथिली लाइव',
       thumbnail: 'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?w=600&auto=format&fit=crop&q=80'
     },
     {
-      id: 'up-302',
-      title: 'Oil Impasto Technique & Palette Knife Mastery',
-      instructor: 'Vikramaditya Rao',
+      id: 'up-geo-12',
+      title: 'भूगोल: भारत लोग और अर्थव्यवस्था सम्पूर्ण मानचित्र कार्य',
+      instructor: 'Shri Manoj Jha',
       time: 'Friday, 05:00 PM',
-      medium: 'Acrylic & Oil',
+      badge: 'मानचित्र मास्टरक्लास',
       thumbnail: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=600&auto=format&fit=crop&q=80'
     }
   ];
 
   return (
-    <div style={{ padding: '16px 16px 80px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ padding: '16px 16px 80px', display: 'flex', flexDirection: 'column', gap: 14 }}>
       
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -95,15 +112,18 @@ export function LiveClassSection({ onOpenLiveRoom }) {
               borderRadius: 9999
             }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444' }} />
-              LIVE STUDIOS
+              LIVE CLASSROOM
             </span>
             <span className="devanagari-tagline" style={{ fontSize: 11, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
               कला ज्ञानं जीवनम्
             </span>
           </div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
-            Live Art Streaming
+          <h2 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
+            Live Lecture Studios
           </h2>
+          <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+            {currentClassInfo.hindiName} ({currentClassInfo.stream})
+          </p>
         </div>
 
         <button 
@@ -112,11 +132,48 @@ export function LiveClassSection({ onOpenLiveRoom }) {
           style={{ padding: '8px 14px', fontSize: 12, borderRadius: 10 }}
         >
           <Radio size={14} />
-          <span>Enter Live Room</span>
+          <span>Join Room</span>
         </button>
       </div>
 
-      {/* Tabs */}
+      {/* Class Selector Bar */}
+      <div style={{
+        display: 'flex',
+        gap: 6,
+        overflowX: 'auto',
+        paddingBottom: 2,
+        scrollbarWidth: 'none'
+      }}>
+        {CLASSES_CONFIG.map(cls => (
+          <button
+            key={cls.id}
+            onClick={() => {
+              if (onSelectClass) onSelectClass(cls.id);
+              setSelectedSubject('All');
+            }}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 10,
+              border: selectedClass === cls.id 
+                ? '1.5px solid var(--color-accent-teal)' 
+                : '1px solid var(--border-subtle)',
+              background: selectedClass === cls.id 
+                ? 'var(--color-accent-teal)' 
+                : 'var(--bg-surface)',
+              color: selectedClass === cls.id ? '#FFFFFF' : 'var(--text-secondary)',
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            {cls.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Tabs (Live Now / Today / Upcoming) */}
       <div style={{
         display: 'flex',
         background: 'var(--bg-surface-subtle)',
@@ -139,7 +196,7 @@ export function LiveClassSection({ onOpenLiveRoom }) {
               background: activeTab === tab.id ? 'var(--bg-surface)' : 'transparent',
               color: activeTab === tab.id ? 'var(--color-primary-navy)' : 'var(--text-secondary)',
               fontWeight: activeTab === tab.id ? 700 : 500,
-              fontSize: 12,
+              fontSize: 11,
               borderRadius: 9,
               boxShadow: activeTab === tab.id ? 'var(--shadow-xs)' : 'none',
               cursor: 'pointer',
@@ -156,38 +213,7 @@ export function LiveClassSection({ onOpenLiveRoom }) {
         ))}
       </div>
 
-      {/* Medium Filter Chips */}
-      <div style={{
-        display: 'flex',
-        gap: 8,
-        overflowX: 'auto',
-        paddingBottom: 4,
-        scrollbarWidth: 'none'
-      }}>
-        {mediums.map(med => (
-          <button
-            key={med}
-            onClick={() => setSelectedMedium(med)}
-            style={{
-              whiteSpace: 'nowrap',
-              padding: '6px 14px',
-              borderRadius: 9999,
-              border: '1px solid',
-              borderColor: selectedMedium === med ? 'var(--color-accent-teal)' : 'var(--border-subtle)',
-              background: selectedMedium === med ? 'var(--color-accent-teal)' : 'var(--bg-surface)',
-              color: selectedMedium === med ? '#FFFFFF' : 'var(--text-secondary)',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            {med}
-          </button>
-        ))}
-      </div>
-
-      {/* Content based on Active Tab */}
+      {/* Active Tab Content */}
       {activeTab === 'live_now' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {liveClasses.map(session => (
@@ -195,7 +221,7 @@ export function LiveClassSection({ onOpenLiveRoom }) {
               key={session.id}
               className="art-card"
               style={{
-                borderRadius: 18,
+                borderRadius: 16,
                 overflow: 'hidden',
                 border: '1.5px solid rgba(13, 148, 136, 0.4)'
               }}
@@ -203,25 +229,22 @@ export function LiveClassSection({ onOpenLiveRoom }) {
               {/* Live Video Thumbnail */}
               <div style={{
                 position: 'relative',
-                height: 180,
+                height: 160,
                 width: '100%',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}>
-                <img 
-                  src={session.thumbnail} 
-                  alt={session.title} 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-                
-                {/* Live Overlays */}
                 <div style={{
                   position: 'absolute',
                   inset: 0,
-                  background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.7) 100%)',
+                  background: 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.75) 100%)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  padding: 14
+                  padding: 12
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{
@@ -230,112 +253,95 @@ export function LiveClassSection({ onOpenLiveRoom }) {
                       gap: 6,
                       background: '#EF4444',
                       color: '#FFFFFF',
-                      padding: '4px 10px',
+                      padding: '3px 8px',
                       borderRadius: 9999,
-                      fontSize: 11,
-                      fontWeight: 800,
-                      letterSpacing: '0.04em'
+                      fontSize: 10,
+                      fontWeight: 800
                     }}>
                       <span className="live-badge-dot" style={{ position: 'static', margin: 0, border: 'none' }} />
                       LIVE STREAM
                     </div>
 
-                    <div style={{
+                    <span style={{
+                      background: 'rgba(0, 0, 0, 0.6)',
+                      backdropFilter: 'blur(4px)',
+                      color: '#FFFFFF',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: '3px 8px',
+                      borderRadius: 6,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 6,
-                      background: 'rgba(0, 0, 0, 0.65)',
-                      backdropFilter: 'blur(8px)',
-                      color: '#FFFFFF',
-                      padding: '4px 10px',
-                      borderRadius: 9999,
-                      fontSize: 11,
-                      fontWeight: 600
+                      gap: 4
                     }}>
-                      <Users size={12} color="#2DD4BF" />
-                      <span>{session.viewersCount} active learners</span>
-                    </div>
+                      <Users size={12} />
+                      {session.viewersCount} watching
+                    </span>
                   </div>
 
-                  {/* Big Play Action */}
+                  {/* Play Button Overlay */}
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <button
                       onClick={onOpenLiveRoom}
                       style={{
-                        width: 56,
-                        height: 56,
+                        width: 48,
+                        height: 48,
                         borderRadius: '50%',
-                        background: 'var(--color-accent-teal)',
+                        background: 'rgba(13, 148, 136, 0.95)',
+                        border: '2px solid rgba(255, 255, 255, 0.8)',
                         color: '#FFFFFF',
-                        border: '3px solid rgba(255, 255, 255, 0.8)',
-                        boxShadow: '0 8px 24px rgba(13, 148, 136, 0.5)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        transform: 'scale(1)',
-                        transition: 'transform 0.15s ease'
+                        boxShadow: '0 8px 24px rgba(13, 148, 136, 0.5)'
                       }}
                     >
-                      <Play size={24} fill="currentColor" style={{ marginLeft: 3 }} />
+                      <Play size={20} fill="#FFFFFF" style={{ marginLeft: 3 }} />
                     </button>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#E2E8F0', fontSize: 11 }}>
-                    <span>{session.time}</span>
-                    <span>HD 1080p Stream</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      background: '#10B981',
+                      color: '#FFF',
+                      padding: '2px 8px',
+                      borderRadius: 4
+                    }}>
+                      {session.badge}
+                    </span>
+                    <span style={{ fontSize: 11, color: '#E2E8F0', fontWeight: 600 }}>
+                      {session.time}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Class Info */}
-              <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* Session Details */}
+              <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <span style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: 'var(--color-accent-teal)',
-                      background: 'var(--color-accent-teal-tint)',
-                      padding: '2px 8px',
-                      borderRadius: 6
-                    }}>
-                      {session.medium}
-                    </span>
-                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                      {session.duration}
-                    </span>
-                  </div>
-
-                  <h3 style={{
-                    fontSize: 15,
-                    fontWeight: 800,
-                    color: 'var(--text-primary)',
-                    fontFamily: 'var(--font-sans)',
-                    lineHeight: 1.35,
-                    marginBottom: 6
-                  }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.35, marginBottom: 4 }}>
                     {session.title}
                   </h3>
-
-                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
                     {session.description}
                   </p>
                 </div>
 
-                {/* Instructor Bar */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  paddingTop: 12,
+                  paddingTop: 8,
                   borderTop: '1px solid var(--border-subtle)'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <img 
                       src={session.instructorAvatar} 
                       alt={session.instructor} 
-                      style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }}
+                      style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
                     />
                     <div>
                       <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -350,10 +356,10 @@ export function LiveClassSection({ onOpenLiveRoom }) {
                   <button
                     onClick={onOpenLiveRoom}
                     className="btn-primary"
-                    style={{ padding: '8px 16px', fontSize: 12, borderRadius: 10 }}
+                    style={{ padding: '6px 12px', fontSize: 11, borderRadius: 8 }}
                   >
                     <span>Join Class</span>
-                    <ChevronRight size={14} />
+                    <ChevronRight size={13} />
                   </button>
                 </div>
               </div>
@@ -362,94 +368,64 @@ export function LiveClassSection({ onOpenLiveRoom }) {
         </div>
       )}
 
+      {/* Today's Schedule */}
       {activeTab === 'today' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {todayClasses.map(cls => (
-            <div key={cls.id} className="art-card" style={{ padding: '14px', display: 'flex', gap: 12, alignItems: 'center' }}>
-              <img 
-                src={cls.thumbnail} 
-                alt={cls.title} 
-                style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }}
-              />
-
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                  <span style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: '#D97706',
-                    background: 'rgba(245, 158, 11, 0.1)',
-                    padding: '2px 6px',
-                    borderRadius: 4
-                  }}>
-                    {cls.countdown}
-                  </span>
-                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                    {cls.time}
-                  </span>
-                </div>
-
-                <h4 style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  marginBottom: 6
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {todayClasses.map(item => (
+            <div key={item.id} className="art-card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  color: item.formatType === 'objective' ? '#059669' : '#2563EB',
+                  background: 'var(--bg-surface-subtle)',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  border: `1px solid ${item.formatType === 'objective' ? '#059669' : '#2563EB'}`
                 }}>
-                  {cls.title}
-                </h4>
+                  {item.badge}
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
+                  {item.countdown}
+                </span>
+              </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                    {cls.instructor}
-                  </span>
-                  <button
-                    style={{
-                      background: 'var(--bg-surface-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      padding: '4px 10px',
-                      borderRadius: 8,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <Bell size={12} color="var(--color-accent-teal)" />
-                    <span>Set Alert</span>
-                  </button>
-                </div>
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>
+                {item.title}
+              </h4>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6, borderTop: '1px solid var(--border-subtle)' }}>
+                <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                  शिक्षक: <strong>{item.instructor}</strong>
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--text-primary)', fontWeight: 700 }}>
+                  {item.time}
+                </span>
               </div>
             </div>
           ))}
         </div>
       )}
 
+      {/* Upcoming Week */}
       {activeTab === 'upcoming' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {upcomingWeek.map(item => (
-            <div key={item.id} className="art-card" style={{ padding: '14px', display: 'flex', gap: 12, alignItems: 'center' }}>
-              <img 
-                src={item.thumbnail} 
-                alt={item.title} 
-                style={{ width: 70, height: 70, borderRadius: 12, objectFit: 'cover' }}
-              />
-              <div style={{ flex: 1 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-accent-teal)' }}>
-                  {item.medium} • {item.time}
+            <div key={item.id} className="art-card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--color-accent-teal)', background: 'var(--color-accent-teal-tint)', padding: '2px 8px', borderRadius: 6 }}>
+                  {item.badge}
                 </span>
-                <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: '2px 0' }}>
-                  {item.title}
-                </h4>
-                <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                  By {item.instructor}
-                </p>
+                <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>
+                  {item.time}
+                </span>
               </div>
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>
+                {item.title}
+              </h4>
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                मार्गदर्शन: <strong>{item.instructor}</strong>
+              </p>
             </div>
           ))}
         </div>

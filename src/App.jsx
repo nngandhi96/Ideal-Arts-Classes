@@ -22,6 +22,10 @@ export default function App() {
   const [isLiveRoomOpen, setIsLiveRoomOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [selectedPdfResource, setSelectedPdfResource] = useState(null);
+
+  // Curriculum State (Classes 8th to 12th, Objective vs Subjective)
+  const [selectedClass, setSelectedClass] = useState('12th'); // '12th' | '11th' | '10th' | '9th' | '8th'
+  const [selectedMode, setSelectedMode] = useState('all'); // 'all' | 'objective' | 'subjective'
   
   // Simulator Viewport State
   const [isFrameless, setIsFrameless] = useState(false);
@@ -164,11 +168,19 @@ export default function App() {
         {/* Scrollable Screen Content */}
         <div className="android-screen-content">
           {!isAuthenticated ? (
-            <SplashOnboarding onFinishAuth={handleFinishAuth} />
+            <SplashOnboarding 
+              selectedClass={selectedClass}
+              onSelectClass={setSelectedClass}
+              onFinishAuth={handleFinishAuth} 
+            />
           ) : (
             <>
               {currentTab === 'home' && (
                 <DashboardHome 
+                  selectedClass={selectedClass}
+                  onSelectClass={setSelectedClass}
+                  selectedMode={selectedMode}
+                  onSelectMode={setSelectedMode}
                   onNavigate={(tab) => setCurrentTab(tab)}
                   onOpenLiveRoom={() => setIsLiveRoomOpen(true)}
                   onOpenNotifications={() => setIsNotificationsOpen(true)}
@@ -177,18 +189,28 @@ export default function App() {
 
               {currentTab === 'live' && (
                 <LiveClassSection 
+                  selectedClass={selectedClass}
+                  onSelectClass={setSelectedClass}
+                  selectedMode={selectedMode}
+                  onSelectMode={setSelectedMode}
                   onOpenLiveRoom={() => setIsLiveRoomOpen(true)}
                 />
               )}
 
               {currentTab === 'library' && (
                 <LibrarySection 
+                  selectedClass={selectedClass}
+                  onSelectClass={setSelectedClass}
+                  selectedMode={selectedMode}
+                  onSelectMode={setSelectedMode}
                   onOpenPdfPreview={(item) => setSelectedPdfResource(item)}
                 />
               )}
 
               {currentTab === 'profile' && (
                 <ProfileSection 
+                  selectedClass={selectedClass}
+                  onSelectClass={setSelectedClass}
                   isDarkMode={isDarkMode}
                   onToggleTheme={handleToggleTheme}
                   onLogout={handleLogout}

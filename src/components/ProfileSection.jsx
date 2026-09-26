@@ -4,11 +4,21 @@ import {
   Award, Shield, FileCheck, PhoneCall, ChevronRight, 
   HardDrive, CheckCircle2, Sparkles, ExternalLink 
 } from 'lucide-react';
+import { CLASSES_CONFIG, SUBJECTS_BY_CLASS } from '../data/curriculumData';
 
-export function ProfileSection({ isDarkMode, onToggleTheme, onLogout }) {
+export function ProfileSection({ 
+  selectedClass = '12th', 
+  onSelectClass, 
+  isDarkMode, 
+  onToggleTheme, 
+  onLogout 
+}) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [showReceiptToast, setShowReceiptToast] = useState(false);
+
+  const currentClassInfo = CLASSES_CONFIG.find(c => c.id === selectedClass) || CLASSES_CONFIG[0];
+  const currentSubjects = SUBJECTS_BY_CLASS[selectedClass] || [];
 
   const handleDownloadReceipt = () => {
     setShowReceiptToast(true);
@@ -49,8 +59,8 @@ export function ProfileSection({ isDarkMode, onToggleTheme, onLogout }) {
                 height: 60,
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: '3px solid var(--color-accent-teal)',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                border: '2.5px solid var(--color-accent-teal)',
+                boxShadow: 'var(--shadow-md)'
               }}
             />
             <span style={{
@@ -88,7 +98,7 @@ export function ProfileSection({ isDarkMode, onToggleTheme, onLogout }) {
               color: '#2DD4BF'
             }}>
               <Award size={12} />
-              <span>Diploma in Fine Arts (Yr 1)</span>
+              <span>{currentClassInfo.name} • {currentClassInfo.hindiName} ({currentClassInfo.stream})</span>
             </div>
           </div>
         </div>
@@ -104,17 +114,80 @@ export function ProfileSection({ isDarkMode, onToggleTheme, onLogout }) {
           textAlign: 'center'
         }}>
           <div>
-            <span style={{ fontSize: 16, fontWeight: 800, color: '#2DD4BF' }}>94%</span>
+            <span style={{ fontSize: 16, fontWeight: 800, color: '#2DD4BF' }}>96%</span>
             <p style={{ fontSize: 10, color: '#94A3B8' }}>Attendance</p>
           </div>
           <div>
-            <span style={{ fontSize: 16, fontWeight: 800, color: '#FFFFFF' }}>86 hrs</span>
-            <p style={{ fontSize: 10, color: '#94A3B8' }}>Studio Time</p>
+            <span style={{ fontSize: 16, fontWeight: 800, color: '#10B981' }}>88%</span>
+            <p style={{ fontSize: 10, color: '#94A3B8' }}>Objective Tests</p>
           </div>
           <div>
-            <span style={{ fontSize: 16, fontWeight: 800, color: '#FF6B4A' }}>14/15</span>
-            <p style={{ fontSize: 10, color: '#94A3B8' }}>Assignments</p>
+            <span style={{ fontSize: 16, fontWeight: 800, color: '#FF6B4A' }}>12/15</span>
+            <p style={{ fontSize: 10, color: '#94A3B8' }}>Subjective Q&A</p>
           </div>
+        </div>
+      </div>
+
+      {/* Class Switcher Pill Bar in Profile */}
+      <div className="art-card" style={{ padding: '12px 14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
+            Switch Enrolled Class / कक्षा बदलें
+          </span>
+          <span style={{ fontSize: 11, color: 'var(--color-accent-teal)', fontWeight: 600 }}>
+            Active: {currentClassInfo.name}
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+          {CLASSES_CONFIG.map(cls => (
+            <button
+              key={cls.id}
+              onClick={() => onSelectClass && onSelectClass(cls.id)}
+              style={{
+                padding: '6px 10px',
+                borderRadius: 8,
+                border: selectedClass === cls.id ? '1.5px solid var(--color-accent-teal)' : '1px solid var(--border-subtle)',
+                background: selectedClass === cls.id ? 'var(--color-accent-teal)' : 'var(--bg-surface)',
+                color: selectedClass === cls.id ? '#FFFFFF' : 'var(--text-secondary)',
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              {cls.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Enrolled Subjects List */}
+      <div className="art-card" style={{ padding: '14px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>
+            Enrolled Subjects ({currentSubjects.length})
+          </h4>
+          <span style={{ fontSize: 10, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
+            {currentClassInfo.stream}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {currentSubjects.map(sub => (
+            <span
+              key={sub.id}
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: sub.color,
+                background: sub.bgLight,
+                padding: '4px 10px',
+                borderRadius: 8,
+                border: `1px solid ${sub.color}25`
+              }}
+            >
+              {sub.name} ({sub.hindiName})
+            </span>
+          ))}
         </div>
       </div>
 
