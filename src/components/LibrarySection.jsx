@@ -20,14 +20,57 @@ export function LibrarySection({
   selectedMode = 'all', 
   onSelectMode, 
   onOpenPdfPreview,
+  onOpenVideo,
   language = 'en'
 }) {
   const t = translations[language] || translations.en;
 
   const [activeSubject, setActiveSubject] = useState('All');
+  const [formatFilter, setFormatFilter] = useState('all'); // 'all' | 'pdf' | 'video'
   const [searchQuery, setSearchQuery] = useState('');
   const [bookmarkedIds, setBookmarkedIds] = useState(new Set(['mat-12-hist-obj', 'mat-12-pol-subj']));
   const [downloadedIds, setDownloadedIds] = useState(new Set(['mat-12-hin-obj']));
+
+  const [allMaterials, setAllMaterials] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ideal_admin_notes');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [
+      {
+        id: 'rec-sample-12',
+        classId: '12th',
+        subjectId: 'history',
+        subjectName: 'History (इतिहास)',
+        title: language === 'hi' 
+          ? 'हड़प्पा सभ्यता: सम्पूर्ण डिजिटल बोर्ड व्याख्यान (Live Class Recording)' 
+          : 'Harappan Civilization: Complete Smart Board Lecture (Live Recording)',
+        author: 'Prof. Anand Kumar',
+        pages: 'Live Recording (58 Mins)',
+        fileSize: '1080p HD',
+        formatType: 'all',
+        badge: language === 'hi' ? '📹 डिजिटल बोर्ड रिकॉर्डिंग' : '📹 Smart Board Recording',
+        badgeColor: '#EF4444',
+        isRecordedVideo: true,
+        streamUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+      },
+      ...STUDY_MATERIALS
+    ];
+  });
+
+  useEffect(() => {
+    const handleStorage = () => {
+      try {
+        const saved = localStorage.getItem('ideal_admin_notes');
+        if (saved) setAllMaterials(JSON.parse(saved));
+      } catch (e) {}
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const currentClassInfo = CLASSES_CONFIG.find(c => c.id === selectedClass) || CLASSES_CONFIG[0];
   const classSubjects = SUBJECTS_BY_CLASS[selectedClass] || [];
@@ -52,7 +95,7 @@ export function LibrarySection({
     });
   };
 
-  const filteredMaterials = STUDY_MATERIALS.filter(item => {
+  const filteredMaterials = allMaterials.filter(item => {
     const matchesClass = item.classId === selectedClass;
     const matchesSubject = activeSubject === 'All' || item.subjectId === activeSubject;
     
@@ -61,13 +104,20 @@ export function LibrarySection({
       matchesMode = item.formatType === selectedMode || item.formatType === 'all';
     }
 
+    let matchesFormat = true;
+    if (formatFilter === 'pdf') {
+      matchesFormat = !item.isRecordedVideo;
+    } else if (formatFilter === 'video') {
+      matchesFormat = !!item.isRecordedVideo;
+    }
+
     const query = searchQuery.toLowerCase().trim();
     const matchesSearch = !query || 
       item.title.toLowerCase().includes(query) || 
       item.subjectName.toLowerCase().includes(query) || 
       item.author.toLowerCase().includes(query);
 
-    return matchesClass && matchesSubject && matchesMode && matchesSearch;
+    return matchesClass && matchesSubject && matchesMode && matchesFormat && matchesSearch;
   });
 
   return (
@@ -258,6 +308,46 @@ export function LibrarySection({
         ))}
       </div>
 
+      {/* Format Filter Bar (All / Notes & PDFs / Recorded Videos) */}
+      <div style={{
+        display: 'flex',
+        background: 'var(--bg-surface-subtle)',
+        padding: 3,
+        borderRadius: 12,
+        border: '1px solid var(--border-subtle)'
+      }}>
+        {[
+          { id: 'all', label: language === 'hi' ? '📑 सम्पूर्ण' : 'All' },
+          { id: 'pdf', label: language === 'hi' ? '📚 नोट्स / PDF' : 'Notes & PDF' },
+          { id: 'video', label: language === 'hi' ? '📹 रिकॉर्डेड क्लास' : 'Video Lectures' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setFormatFilter(tab.id)}
+            style={{
+              flex: 1,
+              padding: '7px',
+              border: 'none',
+              borderRadius: 8,
+              background: formatFilter === tab.id ? 'var(--bg-surface)' : 'transparent',
+              color: formatFilter === tab.id ? 'var(--text-primary)' : 'var(--text-secondary)',
+              fontWeight: formatFilter === tab.id ? 800 : 600,
+              fontSize: 11,
+              boxShadow: formatFilter === tab.id ? 'var(--shadow-xs)' : 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4,
+              transition: 'all 0.15s ease'
+            }}
+          >
+            {tab.id === 'video' && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444' }} />}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* 6. Materials List Cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filteredMaterials.length === 0 ? (
@@ -277,11 +367,12 @@ export function LibrarySection({
           filteredMaterials.map(item => {
             const isBookmarked = bookmarkedIds.has(item.id);
             const isDownloaded = downloadedIds.has(item.id);
+            const isVideo = item.isRecordedVideo;
 
             return (
               <div
                 key={item.id}
-                onClick={() => onOpenPdfPreview(item)}
+                onClick={() => isVideo ? onOpenVideo && onOpenVideo(item) : onOpenPdfPreview(item)}
                 className="art-card"
                 style={{
                   padding: '14px',
@@ -290,7 +381,7 @@ export function LibrarySection({
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 10,
-                  borderLeft: `4px solid ${item.badgeColor || '#0D9488'}`
+                  borderLeft: `4px solid ${item.badgeColor || (isVideo ? '#EF4444' : '#0D9488')}`
                 }}
               >
                 {/* Top Badge & Actions */}
@@ -299,11 +390,11 @@ export function LibrarySection({
                     <span style={{
                       fontSize: 10,
                       fontWeight: 800,
-                      color: item.badgeColor || 'var(--color-accent-teal)',
+                      color: item.badgeColor || (isVideo ? '#EF4444' : 'var(--color-accent-teal)'),
                       background: 'var(--bg-surface-subtle)',
                       padding: '2px 8px',
                       borderRadius: 6,
-                      border: `1px solid ${item.badgeColor || 'var(--color-accent-teal)'}`
+                      border: `1px solid ${item.badgeColor || (isVideo ? '#EF4444' : 'var(--color-accent-teal)')}`
                     }}>
                       {item.badge}
                     </span>
@@ -370,14 +461,21 @@ export function LibrarySection({
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <FileText size={12} />
+                      {isVideo ? <Video size={13} color="#EF4444" /> : <FileText size={12} />}
                       {item.pages}
                     </span>
                     <span>• {item.fileSize}</span>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
-                    <span>{t.library.readPdfBtn}</span>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 4, 
+                    color: isVideo ? '#EF4444' : 'var(--color-accent-teal)', 
+                    fontWeight: 700 
+                  }}>
+                    {isVideo && <Play size={12} fill="#EF4444" />}
+                    <span>{isVideo ? (language === 'hi' ? 'वीडियो देखें' : 'Watch Video') : t.library.readPdfBtn}</span>
                     <ChevronRight size={13} />
                   </div>
                 </div>

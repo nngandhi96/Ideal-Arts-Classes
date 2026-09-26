@@ -22,7 +22,8 @@ import { isSupabaseConfigured, liveClassService, announcementService } from '../
 export function AdminPanel({ 
   onBackToApp, 
   language = 'en', 
-  onSelectLanguage 
+  onSelectLanguage,
+  onStartLiveFromAdmin 
 }) {
   const t = translations[language] || translations.en;
   const adminT = t.admin || translations.en.admin;
@@ -37,6 +38,16 @@ export function AdminPanel({
   // 2. Active Tab State ('overview' | 'live' | 'notes' | 'notices' | 'students' | 'toppers')
   const [activeTab, setActiveTab] = useState('overview');
   const [filterClass, setFilterClass] = useState('all');
+
+  // Smart Board 1-Click Broadcaster States
+  const [boardClass, setBoardClass] = useState('12th');
+  const [boardSubject, setBoardSubject] = useState('History (इतिहास)');
+  const [boardTitle, setBoardTitle] = useState('बिहार बोर्ड 2026: हड़प्पा सभ्यता डिजिटल बोर्ड स्पेशल लाइव क्लास');
+  const [boardTeacher, setBoardTeacher] = useState('Prof. Anand Kumar');
+  const [boardStreamType, setBoardStreamType] = useState('youtube'); // 'youtube' | 'obs'
+  const [boardYoutubeUrl, setBoardYoutubeUrl] = useState('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  const [boardAutoRecord, setBoardAutoRecord] = useState(true);
+  const [copiedKey, setCopiedKey] = useState(false);
 
   // 3. Modals State
   const [showAddLiveModal, setShowAddLiveModal] = useState(false);
@@ -166,21 +177,105 @@ export function AdminPanel({
     sessionStorage.setItem('ideal_admin_unlocked', 'true');
   };
 
-  // Live Toggle Action
+  // Copy Stream Key Helper
+  const handleCopyStreamKey = () => {
+    navigator.clipboard?.writeText('iac-live-board-2026');
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
+    showToast(language === 'hi' ? 'OBS Stream Key कॉपी हो गई!' : 'OBS Stream Key Copied!');
+  };
+
+  // Launch Smart Board Live Broadcast
+  const handleLaunchSmartBoardLive = (e) => {
+    e?.preventDefault();
+    const newLiveId = 'live-board-' + Date.now();
+    const liveItem = {
+      id: newLiveId,
+      classId: boardClass,
+      subjectId: boardSubject.toLowerCase().replace(/[^a-z]/g, '') || 'history',
+      subjectName: boardSubject,
+      title: boardTitle,
+      instructor: boardTeacher,
+      instructorRole: 'Head Faculty',
+      time: language === 'hi' ? 'अभी लाइव शुरू हुआ' : 'Live Stream Started',
+      status: 'live',
+      badge: language === 'hi' ? '🔴 स्मार्ट बोर्ड LIVE' : '🔴 SMART BOARD LIVE',
+      badgeColor: '#EF4444',
+      viewersCount: Math.floor(Math.random() * 80) + 180,
+      streamType: boardStreamType,
+      streamUrl: boardStreamType === 'youtube' ? boardYoutubeUrl : 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      autoRecord: boardAutoRecord
+    };
+
+    setLiveClassesList(prev => [liveItem, ...prev]);
+
+    // Student Alert Notice
+    const liveNotice = {
+      id: 'not-' + Date.now(),
+      classId: boardClass,
+      title: `🔴 ${boardSubject}: डिजिटल बोर्ड लाइव क्लास शुरू हो चुकी है!`,
+      content: `${boardTitle} - शिक्षक ${boardTeacher} द्वारा डिजिटल बोर्ड से लाइव प्रसारण शुरू हो गया है। तुरंत जुड़ें।`,
+      priority: 'urgent',
+      date: 'Just now',
+      badge: '🔴 लाइव प्रसारण'
+    };
+    setNoticesList(prev => [liveNotice, ...prev]);
+
+    showToast(language === 'hi' ? 'डिजिटल बोर्ड लाइव क्लास शुरू हो गई! छात्रों को सूचना भेज दी गई।' : 'Live stream started & students notified!');
+
+    if (onStartLiveFromAdmin) {
+      setTimeout(() => {
+        onStartLiveFromAdmin(liveItem);
+      }, 500);
+    }
+  };
+
+  // Live Toggle Action (with Auto-Recording to Library)
   const toggleLiveStatus = (classId) => {
+    let completedItem = null;
     setLiveClassesList(prev => prev.map(item => {
       if (item.id === classId) {
         const isNowLive = item.status !== 'live';
-        return {
+        const updated = {
           ...item,
           status: isNowLive ? 'live' : 'completed',
-          time: isNowLive ? (language === 'hi' ? 'अभी लाइव शुरू हुआ' : 'Live Stream Started') : (language === 'hi' ? 'सत्र समाप्त' : 'Session Ended'),
-          badge: isNowLive ? (language === 'hi' ? '🔴 लाइव प्रसारण' : '🔴 LIVE NOW') : (language === 'hi' ? 'समाप्त' : 'Ended')
+          time: isNowLive 
+            ? (language === 'hi' ? 'अभी लाइव शुरू हुआ' : 'Live Stream Started') 
+            : (language === 'hi' ? 'सत्र समाप्त • रिकॉर्डेड उपलब्ध' : 'Session Ended • Recorded'),
+          badge: isNowLive 
+            ? (language === 'hi' ? '🔴 लाइव प्रसारण' : '🔴 LIVE NOW') 
+            : (language === 'hi' ? '📹 रिकॉर्डेड' : 'Recorded')
         };
+        if (!isNowLive) {
+          completedItem = updated;
+        }
+        return updated;
       }
       return item;
     }));
-    showToast(adminT.savedSuccess);
+
+    // If session ended, auto-record to notes list so students can watch in Library
+    if (completedItem && completedItem.autoRecord !== false) {
+      const newRecordedMaterial = {
+        id: 'rec-' + Date.now(),
+        classId: completedItem.classId || '12th',
+        subjectId: completedItem.subjectId || 'history',
+        subjectName: completedItem.subjectName || completedItem.title,
+        title: `${language === 'hi' ? '[रिकॉर्डेड क्लास]' : '[Recorded Class]'} ${completedItem.title}`,
+        author: completedItem.instructor || 'Prof. Anand Kumar',
+        pages: language === 'hi' ? 'लाइव रिकॉर्डिंग (60 Mins)' : 'Full Session Recording (60m)',
+        fileSize: '1080p HD',
+        formatType: completedItem.formatType || 'all',
+        badge: language === 'hi' ? '📹 रिकॉर्डेड वीडियो' : '📹 Recorded Video',
+        badgeColor: '#EF4444',
+        isRecordedVideo: true,
+        streamUrl: completedItem.streamUrl || ''
+      };
+      setNotesList(prev => [newRecordedMaterial, ...prev]);
+      showToast(language === 'hi' ? 'लाइव क्लास समाप्त हुई और रिकॉर्डिंग लाइब्रेरी में सेव हो गई!' : 'Live session ended & saved to Library recordings!');
+    } else {
+      showToast(adminT.savedSuccess);
+    }
   };
 
   const deleteLiveClass = (id) => {
@@ -812,6 +907,303 @@ export function AdminPanel({
             </button>
           </div>
 
+          {/* ========================================================= */}
+          {/* SMART / DIGITAL BOARD 1-CLICK LIVE STUDIO BROADCASTER */}
+          {/* ========================================================= */}
+          <div style={{
+            background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+            border: '2px solid rgba(239, 68, 68, 0.4)',
+            borderRadius: 16,
+            padding: '16px',
+            color: '#FFFFFF',
+            boxShadow: '0 8px 24px rgba(239, 68, 68, 0.15)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 10,
+                  background: '#EF4444',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#FFFFFF',
+                  boxShadow: '0 0 12px rgba(239, 68, 68, 0.6)'
+                }}>
+                  <Radio size={18} />
+                </div>
+                <div>
+                  <h4 style={{ fontSize: 14, fontWeight: 800, margin: 0, color: '#FFFFFF' }}>
+                    {language === 'hi' ? '🖥️ स्मार्ट बोर्ड 1-क्लिक लाइव स्टूडियो' : '🖥️ Smart Board 1-Click Live Studio'}
+                  </h4>
+                  <span style={{ fontSize: 10, color: '#94A3B8' }}>
+                    {language === 'hi' ? 'डिजिटल बोर्ड से लाइव क्लास लें और ऑटोमैटिक रिकॉर्ड करें' : 'Stream live from Digital Board / OBS with auto-recording'}
+                  </span>
+                </div>
+              </div>
+
+              <span style={{
+                fontSize: 9,
+                fontWeight: 800,
+                background: 'rgba(239, 68, 68, 0.2)',
+                color: '#F87171',
+                padding: '2px 8px',
+                borderRadius: 9999,
+                border: '1px solid rgba(239, 68, 68, 0.4)'
+              }}>
+                OBS / YOUTUBE READY
+              </span>
+            </div>
+
+            {/* Stream Mode Switch: YouTube Unlisted vs OBS RTMP */}
+            <div style={{
+              display: 'flex',
+              background: 'rgba(255, 255, 255, 0.08)',
+              padding: 3,
+              borderRadius: 10,
+              gap: 4
+            }}>
+              <button
+                type="button"
+                onClick={() => setBoardStreamType('youtube')}
+                style={{
+                  flex: 1,
+                  padding: '6px',
+                  borderRadius: 7,
+                  border: 'none',
+                  background: boardStreamType === 'youtube' ? '#EF4444' : 'transparent',
+                  color: '#FFFFFF',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                🔴 YouTube Unlisted ({language === 'hi' ? 'मुफ़्त & ऑटो-रिकॉर्ड' : 'Free & Auto-Save'})
+              </button>
+              <button
+                type="button"
+                onClick={() => setBoardStreamType('obs')}
+                style={{
+                  flex: 1,
+                  padding: '6px',
+                  borderRadius: 7,
+                  border: 'none',
+                  background: boardStreamType === 'obs' ? 'var(--color-accent-teal)' : 'transparent',
+                  color: '#FFFFFF',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                📡 OBS Studio Key ({language === 'hi' ? 'सीधा RTMP' : 'Direct RTMP'})
+              </button>
+            </div>
+
+            {/* Inputs Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div>
+                <label style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600, display: 'block', marginBottom: 2 }}>
+                  {language === 'hi' ? 'कक्षा (Class)' : 'Class'}
+                </label>
+                <select
+                  value={boardClass}
+                  onChange={(e) => setBoardClass(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: 8,
+                    padding: '6px 8px',
+                    color: '#FFFFFF',
+                    fontSize: 11,
+                    outline: 'none'
+                  }}
+                >
+                  {CLASSES_CONFIG.map(c => (
+                    <option key={c.id} value={c.id} style={{ background: '#1E293B', color: '#FFF' }}>
+                      {getClassDisplayName(c, language)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600, display: 'block', marginBottom: 2 }}>
+                  {language === 'hi' ? 'विषय (Subject)' : 'Subject'}
+                </label>
+                <input
+                  type="text"
+                  value={boardSubject}
+                  onChange={(e) => setBoardSubject(e.target.value)}
+                  placeholder="e.g. History (इतिहास)"
+                  style={{
+                    width: '100%',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: 8,
+                    padding: '6px 8px',
+                    color: '#FFFFFF',
+                    fontSize: 11,
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600, display: 'block', marginBottom: 2 }}>
+                {language === 'hi' ? 'क्लास का टॉपिक / शीर्षक' : 'Lecture Title'}
+              </label>
+              <input
+                type="text"
+                value={boardTitle}
+                onChange={(e) => setBoardTitle(e.target.value)}
+                placeholder="e.g. 50 VVI MCQ Live Session"
+                style={{
+                  width: '100%',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: 8,
+                  padding: '6px 8px',
+                  color: '#FFFFFF',
+                  fontSize: 11,
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* Stream Specific Configuration Box */}
+            {boardStreamType === 'youtube' ? (
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.3)',
+                padding: '10px',
+                borderRadius: 10,
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ fontSize: 10, color: '#FCA5A5', fontWeight: 700 }}>
+                    {language === 'hi' ? 'यूट्यूब लाइव लिंक (Unlisted YouTube Stream Link)' : 'YouTube Stream URL / Video ID'}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setBoardYoutubeUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')}
+                    style={{ background: 'none', border: 'none', color: '#2DD4BF', fontSize: 9, cursor: 'pointer', fontWeight: 700 }}
+                  >
+                    {language === 'hi' ? 'डेमो लिंक भरें' : 'Use Demo Link'}
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={boardYoutubeUrl}
+                  onChange={(e) => setBoardYoutubeUrl(e.target.value)}
+                  placeholder="https://youtube.com/live/... or https://youtu.be/..."
+                  style={{
+                    width: '100%',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: 6,
+                    padding: '6px 8px',
+                    color: '#FFFFFF',
+                    fontSize: 11,
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <span style={{ fontSize: 9, color: '#94A3B8' }}>
+                  💡 {language === 'hi' ? 'यूट्यूब पर Unlisted लाइव शुरू करें और लिंक यहाँ डालें। क्लास खत्म होने पर वीडियो खुद सेव हो जाएगी।' : 'Schedule Unlisted live on YouTube studio & paste link here. Automatically records to Library.'}
+                </span>
+              </div>
+            ) : (
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.3)',
+                padding: '10px',
+                borderRadius: 10,
+                border: '1px solid rgba(45, 212, 191, 0.3)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8
+              }}>
+                <div>
+                  <div style={{ fontSize: 10, color: '#94A3B8' }}>RTMP Server:</div>
+                  <code style={{ fontSize: 10, color: '#2DD4BF', wordBreak: 'break-all' }}>rtmp://live.idealartsclasses.com/app</code>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255, 255, 255, 0.06)', padding: '6px 8px', borderRadius: 6 }}>
+                  <div>
+                    <div style={{ fontSize: 9, color: '#94A3B8' }}>OBS Stream Key:</div>
+                    <code style={{ fontSize: 11, color: '#FFFFFF', fontWeight: 700 }}>iac-live-board-2026</code>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyStreamKey}
+                    style={{
+                      background: copiedKey ? '#10B981' : 'var(--color-accent-teal)',
+                      color: '#FFF',
+                      border: 'none',
+                      borderRadius: 6,
+                      padding: '4px 8px',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {copiedKey ? '✓ Copied' : '📋 Copy Key'}
+                  </button>
+                </div>
+                <span style={{ fontSize: 9, color: '#94A3B8' }}>
+                  💡 {language === 'hi' ? 'डिजिटल बोर्ड पर OBS में Stream Key डालकर "Start Streaming" दबाएँ।' : 'Paste Key in OBS Studio on Smart Board and click Start Streaming.'}
+                </span>
+              </div>
+            )}
+
+            {/* Auto Record Checkbox */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0' }}>
+              <input
+                type="checkbox"
+                id="boardAutoRecord"
+                checked={boardAutoRecord}
+                onChange={(e) => setBoardAutoRecord(e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: '#10B981' }}
+              />
+              <label htmlFor="boardAutoRecord" style={{ fontSize: 11, color: '#E2E8F0', fontWeight: 600, cursor: 'pointer' }}>
+                {language === 'hi' ? '✅ क्लास समाप्त होते ही लाइब्रेरी में ऑटो-रिकॉर्ड (Auto-Save Recording) करें' : 'Auto-record and save to Library when live session ends'}
+              </label>
+            </div>
+
+            {/* Launch Button */}
+            <button
+              type="button"
+              onClick={handleLaunchSmartBoardLive}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+                color: '#FFFFFF',
+                border: 'none',
+                padding: '11px',
+                borderRadius: 10,
+                fontSize: 12,
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)'
+              }}
+            >
+              <Radio size={16} />
+              <span>{language === 'hi' ? '🔴 डिजिटल बोर्ड से लाइव शुरू करें (Go Live Now)' : '🔴 Go Live on Smart Board Now'}</span>
+            </button>
+          </div>
+
           {/* List of live classes */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {liveClassesList
@@ -886,39 +1278,71 @@ export function AdminPanel({
                       <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
                         👨‍🏫 {clsItem.instructor} ({clsItem.instructorRole || 'Faculty'})
                       </div>
+                      {clsItem.streamUrl && (
+                        <div style={{ fontSize: 10, color: 'var(--color-accent-teal)', fontWeight: 600, marginTop: 3 }}>
+                          🔗 {clsItem.streamUrl.includes('youtu') ? 'YouTube Unlisted Stream' : 'Digital Board Stream Connected'}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Action button: Go Live Now / End Live */}
+                    {/* Action button row: Preview Live / Go Live / End Live */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       paddingTop: 8,
-                      borderTop: '1px solid var(--border-subtle)'
+                      borderTop: '1px solid var(--border-subtle)',
+                      gap: 8
                     }}>
                       <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
                         {clsItem.viewersCount ? `${clsItem.viewersCount} active viewers` : 'Ready to stream'}
                       </div>
 
-                      <button
-                        onClick={() => toggleLiveStatus(clsItem.id)}
-                        style={{
-                          background: isLiveNow ? '#EF4444' : 'var(--color-accent-teal)',
-                          color: '#FFFFFF',
-                          border: 'none',
-                          padding: '6px 12px',
-                          borderRadius: 8,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4
-                        }}
-                      >
-                        {isLiveNow ? <Square size={12} fill="#FFF" /> : <Play size={12} fill="#FFF" />}
-                        <span>{isLiveNow ? adminT.endLiveNow : adminT.goLiveNow}</span>
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {onStartLiveFromAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => onStartLiveFromAdmin(clsItem)}
+                            style={{
+                              background: 'var(--bg-surface-subtle)',
+                              color: 'var(--text-primary)',
+                              border: '1px solid var(--border-subtle)',
+                              padding: '6px 10px',
+                              borderRadius: 8,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                            title="Preview student live screen"
+                          >
+                            <Eye size={12} />
+                            <span>{language === 'hi' ? 'प्रीव्यू' : 'Preview'}</span>
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => toggleLiveStatus(clsItem.id)}
+                          style={{
+                            background: isLiveNow ? '#EF4444' : 'var(--color-accent-teal)',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            padding: '6px 12px',
+                            borderRadius: 8,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}
+                        >
+                          {isLiveNow ? <Square size={12} fill="#FFF" /> : <Play size={12} fill="#FFF" />}
+                          <span>{isLiveNow ? (language === 'hi' ? 'समाप्त & सेव करें' : 'End & Auto-Save') : adminT.goLiveNow}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -1298,19 +1722,40 @@ export function AdminPanel({
           <form onSubmit={(e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
+            const isLiveNow = fd.get('goLiveNow') === 'on';
             const newClass = {
               id: 'live-' + Date.now(),
               classId: fd.get('classId') || '12th',
-              subjectId: fd.get('subject') || 'history',
+              subjectId: (fd.get('subject') || 'history').toLowerCase().replace(/[^a-z]/g, ''),
+              subjectName: fd.get('subject') || 'History',
               title: fd.get('title'),
               instructor: fd.get('instructor') || 'Prof. Anand Kumar',
               instructorRole: fd.get('role') || 'Senior Faculty',
-              time: fd.get('time') || 'Today 06:00 PM',
+              time: isLiveNow ? (language === 'hi' ? 'अभी लाइव शुरू हुआ' : 'Started just now') : (fd.get('time') || 'Today 06:00 PM'),
               formatType: fd.get('formatType') || 'objective',
-              status: fd.get('goLiveNow') === 'on' ? 'live' : 'upcoming',
-              badge: fd.get('goLiveNow') === 'on' ? '🔴 LIVE NOW' : 'SCHEDULED'
+              status: isLiveNow ? 'live' : 'upcoming',
+              badge: isLiveNow ? (language === 'hi' ? '🔴 लाइव प्रसारण' : '🔴 LIVE NOW') : 'SCHEDULED',
+              badgeColor: isLiveNow ? '#EF4444' : '#2563EB',
+              viewersCount: isLiveNow ? 195 : 0,
+              streamType: fd.get('streamType') || 'youtube',
+              streamUrl: fd.get('streamUrl') || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+              autoRecord: fd.get('autoRecord') === 'on'
             };
             setLiveClassesList(prev => [newClass, ...prev]);
+
+            if (isLiveNow) {
+              const liveNotice = {
+                id: 'not-' + Date.now(),
+                classId: newClass.classId,
+                title: `🔴 ${newClass.subjectName}: लाइव क्लास शुरू हो चुकी है!`,
+                content: `${newClass.title} - शिक्षक ${newClass.instructor} द्वारा लाइव क्लास शुरू हो गई है।`,
+                priority: 'urgent',
+                date: 'Just now',
+                badge: '🔴 लाइव प्रसारण'
+              };
+              setNoticesList(prev => [liveNotice, ...prev]);
+            }
+
             setShowAddLiveModal(false);
             showToast(adminT.savedSuccess);
           }}>
@@ -1334,6 +1779,16 @@ export function AdminPanel({
                 <input name="title" required placeholder="e.g. Chapter 3 VVI MCQs Live Marathon" style={inputStyle} />
               </div>
 
+              <div>
+                <label style={labelStyle}>{language === 'hi' ? 'स्ट्रीम लिंक (YouTube / OBS)' : 'Stream URL (YouTube Unlisted or Video)'}</label>
+                <input 
+                  name="streamUrl" 
+                  defaultValue="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                  placeholder="https://youtube.com/live/... or https://youtu.be/..." 
+                  style={inputStyle} 
+                />
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <div>
                   <label style={labelStyle}>{language === 'hi' ? 'शिक्षक का नाम' : 'Teacher Name'}</label>
@@ -1354,15 +1809,24 @@ export function AdminPanel({
                 </select>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0' }}>
-                <input type="checkbox" id="goLiveNow" name="goLiveNow" style={{ width: 18, height: 18, accentColor: '#EF4444' }} />
-                <label htmlFor="goLiveNow" style={{ fontSize: 12, fontWeight: 700, color: '#EF4444', cursor: 'pointer' }}>
-                  {language === 'hi' ? 'तुरंत लाइव प्रसारण शुरू करें (Broadcast Immediately)' : 'Broadcast Live Immediately'}
-                </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '4px 0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input type="checkbox" id="autoRecord" name="autoRecord" defaultChecked style={{ width: 16, height: 16, accentColor: '#10B981' }} />
+                  <label htmlFor="autoRecord" style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                    {language === 'hi' ? 'क्लास समाप्त होने पर लाइब्रेरी में ऑटो-रिकॉर्ड करें' : 'Auto-record to Library when finished'}
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input type="checkbox" id="goLiveNow" name="goLiveNow" style={{ width: 18, height: 18, accentColor: '#EF4444' }} />
+                  <label htmlFor="goLiveNow" style={{ fontSize: 12, fontWeight: 700, color: '#EF4444', cursor: 'pointer' }}>
+                    {language === 'hi' ? 'तुरंत लाइव प्रसारण शुरू करें (Broadcast Immediately)' : 'Broadcast Live Immediately'}
+                  </label>
+                </div>
               </div>
 
               <button type="submit" className="btn-primary" style={{ width: '100%', padding: '12px', borderRadius: 10, fontSize: 13, marginTop: 4 }}>
-                <span>{language === 'hi' ? 'क्लास शेड्यूल करें' : 'Publish Schedule'}</span>
+                <span>{language === 'hi' ? 'क्लास प्रकाशित / लाइव करें' : 'Publish / Broadcast'}</span>
               </button>
             </div>
           </form>

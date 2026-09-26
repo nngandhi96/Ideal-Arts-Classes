@@ -28,6 +28,27 @@ export function LiveClassSection({
   const [activeTab, setActiveTab] = useState('live_now'); // 'live_now' | 'today' | 'upcoming'
   const [selectedSubject, setSelectedSubject] = useState('All');
   const [supabaseClasses, setSupabaseClasses] = useState([]);
+  
+  const [adminLiveClasses, setAdminLiveClasses] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ideal_admin_live');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const checkLiveUpdates = () => {
+      try {
+        const saved = localStorage.getItem('ideal_admin_live');
+        if (saved) setAdminLiveClasses(JSON.parse(saved));
+      } catch (e) {}
+    };
+    checkLiveUpdates();
+    window.addEventListener('storage', checkLiveUpdates);
+    return () => window.removeEventListener('storage', checkLiveUpdates);
+  }, []);
 
   useEffect(() => {
     async function fetchDbClasses() {
@@ -111,9 +132,17 @@ export function LiveClassSection({
       badgeColor: '#2563EB'
     }));
 
+  const adminActiveLive = adminLiveClasses 
+    ? adminLiveClasses.filter(c => c.status === 'live' && (c.classId === selectedClass || c.classId === 'all'))
+    : [];
+
+  const adminUpcoming = adminLiveClasses
+    ? adminLiveClasses.filter(c => c.status !== 'live' && c.status !== 'completed' && (c.classId === selectedClass || c.classId === 'all'))
+    : [];
+
   const staticUpcoming = LIVE_CLASSES_CONFIG.filter(c => c.classId === selectedClass);
-  const displayLiveClasses = [...mappedDbLive, ...liveClasses.filter(c => c.classId === selectedClass)];
-  const displayUpcomingClasses = [...mappedDbUpcoming, ...staticUpcoming];
+  const displayLiveClasses = [...adminActiveLive, ...mappedDbLive, ...liveClasses.filter(c => c.classId === selectedClass)];
+  const displayUpcomingClasses = [...adminUpcoming, ...mappedDbUpcoming, ...staticUpcoming];
 
   return (
     <div style={{ padding: '16px 16px 80px', display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -333,7 +362,7 @@ export function LiveClassSection({
                     </div>
 
                     <button
-                      onClick={onOpenLiveRoom}
+                      onClick={() => onOpenLiveRoom && onOpenLiveRoom(session)}
                       style={{
                         alignSelf: 'center',
                         width: 50,
@@ -389,7 +418,7 @@ export function LiveClassSection({
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <img 
-                        src={session.instructorAvatar} 
+                        src={session.instructorAvatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80"} 
                         alt="teacher" 
                         style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} 
                       />
@@ -404,7 +433,7 @@ export function LiveClassSection({
                     </div>
 
                     <button
-                      onClick={onOpenLiveRoom}
+                      onClick={() => onOpenLiveRoom && onOpenLiveRoom(session)}
                       className="btn-primary"
                       style={{ padding: '6px 12px', fontSize: 11, borderRadius: 8 }}
                     >

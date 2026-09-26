@@ -21,8 +21,14 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState('home'); // 'home' | 'live' | 'library' | 'profile'
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLiveRoomOpen, setIsLiveRoomOpen] = useState(false);
+  const [activeLiveSession, setActiveLiveSession] = useState(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [selectedPdfResource, setSelectedPdfResource] = useState(null);
+
+  const handleOpenLiveRoom = (session) => {
+    setActiveLiveSession(session || null);
+    setIsLiveRoomOpen(true);
+  };
 
   // App Language State: 'en' | 'hi'
   const [language, setLanguage] = useState(() => {
@@ -248,7 +254,7 @@ export default function App() {
                   selectedMode={selectedMode}
                   onSelectMode={setSelectedMode}
                   onNavigate={(tab) => setCurrentTab(tab)}
-                  onOpenLiveRoom={() => setIsLiveRoomOpen(true)}
+                  onOpenLiveRoom={handleOpenLiveRoom}
                   onOpenNotifications={() => setIsNotificationsOpen(true)}
                   language={language}
                 />
@@ -260,7 +266,7 @@ export default function App() {
                   onSelectClass={setSelectedClass}
                   selectedMode={selectedMode}
                   onSelectMode={setSelectedMode}
-                  onOpenLiveRoom={() => setIsLiveRoomOpen(true)}
+                  onOpenLiveRoom={handleOpenLiveRoom}
                   language={language}
                 />
               )}
@@ -272,6 +278,7 @@ export default function App() {
                   selectedMode={selectedMode}
                   onSelectMode={setSelectedMode}
                   onOpenPdfPreview={(item) => setSelectedPdfResource(item)}
+                  onOpenVideo={handleOpenLiveRoom}
                   language={language}
                 />
               )}
@@ -294,6 +301,7 @@ export default function App() {
                   onBackToApp={() => setCurrentTab('home')}
                   language={language}
                   onSelectLanguage={setLanguage}
+                  onStartLiveFromAdmin={handleOpenLiveRoom}
                 />
               )}
             </>
@@ -301,7 +309,14 @@ export default function App() {
 
           {/* Interactive Live Classroom Modal */}
           {isLiveRoomOpen && (
-            <LiveRoomModal onClose={() => setIsLiveRoomOpen(false)} />
+            <LiveRoomModal 
+              session={activeLiveSession}
+              language={language}
+              onClose={() => {
+                setIsLiveRoomOpen(false);
+                setActiveLiveSession(null);
+              }} 
+            />
           )}
 
           {/* Notifications Modal */}

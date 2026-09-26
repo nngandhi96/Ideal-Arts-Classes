@@ -5,7 +5,7 @@ import {
   Download, Check, Mic, MicOff, AlertCircle, Bookmark 
 } from 'lucide-react';
 
-export function LiveRoomModal({ onClose }) {
+export function LiveRoomModal({ onClose, session, language = 'hi' }) {
   const [activeDrawer, setActiveDrawer] = useState('chat'); // 'chat' | 'notes' | 'settings'
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [isHandApproved, setIsHandApproved] = useState(false);
@@ -13,6 +13,35 @@ export function LiveRoomModal({ onClose }) {
   const [streamQuality, setStreamQuality] = useState('1080p HD');
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
+  
+  // Parse Stream URL (YouTube / Video / Canvas)
+  const getStreamMediaInfo = (urlOrId) => {
+    if (!urlOrId) return { type: 'canvas', url: null };
+    const str = String(urlOrId).trim();
+    const ytMatch = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|live\/|shorts\/))([\w-]{11})/);
+    if (ytMatch && ytMatch[1]) {
+      return {
+        type: 'youtube',
+        url: `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1&modestbranding=1&rel=0&playsinline=1`
+      };
+    }
+    if (/^[a-zA-Z0-9_-]{11}$/.test(str)) {
+      return {
+        type: 'youtube',
+        url: `https://www.youtube-nocookie.com/embed/${str}?autoplay=1&modestbranding=1&rel=0&playsinline=1`
+      };
+    }
+    if (/\.(mp4|webm|ogg)($|\?)/i.test(str)) {
+      return { type: 'video', url: str };
+    }
+    if (str.startsWith('http://') || str.startsWith('https://')) {
+      return { type: 'iframe', url: str };
+    }
+    return { type: 'canvas', url: null };
+  };
+
+  const mediaInfo = getStreamMediaInfo(session?.streamUrl);
+  const isRecorded = session?.status === 'completed' || session?.isRecordedVideo;
   
   const [chatMessages, setChatMessages] = useState([
     { id: 1, sender: 'Prof. Ramesh Kulkarni', role: 'Instructor', text: 'Welcome everyone! Today we are focusing on multi-point vanishing guides for interior rooms.', isTeacher: true, time: '10:02 AM' },
@@ -135,14 +164,16 @@ export function LiveRoomModal({ onClose }) {
         ...prev,
         {
           id: Date.now() + 1,
-          sender: 'Prof. Ramesh Kulkarni',
+          sender: session?.instructor || 'Prof. Anand Kumar',
           role: 'Instructor',
-          text: 'Great observation Aarav! Make sure to align the bottom contour with the lower guide.',
+          text: language === 'hi' 
+            ? 'बहुत अच्छा सवाल! डिजिटल बोर्ड पर इस मुख्य बिंदु को नोट कर लें, यह बोर्ड परीक्षा में 5 मार्क्स के लिए आता है।' 
+            : 'Great question! Make sure to note down this key point on the board, it is high yield for your board exam.',
           isTeacher: true,
           time: 'Just now'
         }
       ]);
-    }, 2200);
+    }, 1800);
   };
 
   const handleRaiseHand = () => {
@@ -183,21 +214,21 @@ export function LiveRoomModal({ onClose }) {
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            background: '#EF4444',
+            background: isRecorded ? 'var(--color-accent-teal)' : '#EF4444',
             padding: '3px 8px',
             borderRadius: 6,
             fontSize: 10,
             fontWeight: 800
           }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FFFFFF' }} />
-            LIVE
+            {isRecorded ? (language === 'hi' ? 'रिकॉर्डेड' : 'RECORDED') : 'LIVE'}
           </div>
           <div>
             <h4 style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 190 }}>
-              Perspective Drawing
+              {session?.title || (language === 'hi' ? 'हड़प्पा सभ्यता & मौर्य साम्राज्य: VVI Live Marathon' : 'Arts Stream: 50/50 Objective OMR Target Batch')}
             </h4>
             <span style={{ fontSize: 10, color: '#94A3B8' }}>
-              Prof. Ramesh Kulkarni
+              👨‍🏫 {session?.instructor || 'Prof. Anand Kumar'}
             </span>
           </div>
         </div>
@@ -214,7 +245,7 @@ export function LiveRoomModal({ onClose }) {
             borderRadius: 9999
           }}>
             <Users size={12} />
-            <span>142</span>
+            <span>{session?.viewersCount || 248}</span>
           </div>
 
           <button
@@ -238,154 +269,137 @@ export function LiveRoomModal({ onClose }) {
         </div>
       </div>
 
-      {/* 16:9 Stream Player Video Canvas */}
+      {/* 16:9 Stream Player Video Canvas / YouTube Embed */}
       <div style={{
         position: 'relative',
         width: '100%',
-        height: 225,
+        height: 230,
         background: '#000000',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        overflow: 'hidden'
       }}>
-        <canvas 
-          ref={canvasRef} 
-          width={412} 
-          height={225} 
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-
-        {/* Live Easel Camera Watermark */}
-        <div style={{
-          position: 'absolute',
-          top: 10,
-          left: 12,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(6px)',
-          padding: '2px 8px',
-          borderRadius: 6,
-          fontSize: 10,
-          color: '#E2E8F0'
-        }}>
-          <span>CAM 1: Overhead Easel View</span>
-        </div>
-
-        {/* Teacher PiP Video in top right */}
-        <div style={{
-          position: 'absolute',
-          top: 10,
-          right: 12,
-          width: 76,
-          height: 96,
-          borderRadius: 10,
-          overflow: 'hidden',
-          border: '2px solid var(--color-accent-teal)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-          background: '#1E293B'
-        }}>
-          <img 
-            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80" 
-            alt="Instructor"
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        {mediaInfo.type === 'youtube' || mediaInfo.type === 'iframe' ? (
+          <iframe
+            src={mediaInfo.url}
+            title={session?.title || "Ideal Arts Classes Live Stream"}
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
           />
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            insetInline: 0,
-            background: 'rgba(0,0,0,0.7)',
-            fontSize: 8,
-            color: '#FFFFFF',
-            textAlign: 'center',
-            padding: '1px 0'
-          }}>
-            Prof. Ramesh
-          </div>
-        </div>
+        ) : mediaInfo.type === 'video' ? (
+          <video
+            src={mediaInfo.url}
+            controls
+            autoPlay
+            playsInline
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          />
+        ) : (
+          <>
+            <canvas 
+              ref={canvasRef} 
+              width={412} 
+              height={230} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
 
-        {/* Player Controls Bar */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          insetInline: 0,
-          background: 'linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 100%)',
-          padding: '8px 12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          color: '#FFFFFF'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              onClick={() => setIsMuted(!isMuted)}
-              style={{ background: 'none', border: 'none', color: '#FFFFFF', cursor: 'pointer' }}
-            >
-              {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-            </button>
-            <span style={{ fontSize: 11, color: '#CBD5E1' }}>00:25:40 / 01:30:00</span>
-          </div>
+            {/* Smart Digital Board Feed Badge */}
+            <div style={{
+              position: 'absolute',
+              top: 10,
+              left: 12,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'rgba(0,0,0,0.7)',
+              backdropFilter: 'blur(6px)',
+              padding: '3px 8px',
+              borderRadius: 6,
+              fontSize: 10,
+              color: '#E2E8F0',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />
+              <span>{language === 'hi' ? '🖥️ स्मार्ट बोर्ड लाइव फीड (Digital Board Feed)' : '🖥️ Smart Board Live Feed'}</span>
+            </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
-            {/* Resolution Selector */}
-            <button
-              onClick={() => setShowQualityMenu(!showQualityMenu)}
-              style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                border: 'none',
-                color: '#FFFFFF',
-                padding: '3px 8px',
-                borderRadius: 6,
-                fontSize: 10,
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              {streamQuality}
-            </button>
-
-            {showQualityMenu && (
+            {/* Teacher PiP Video in top right */}
+            <div style={{
+              position: 'absolute',
+              top: 10,
+              right: 12,
+              width: 76,
+              height: 96,
+              borderRadius: 10,
+              overflow: 'hidden',
+              border: '2px solid var(--color-accent-teal)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              background: '#1E293B'
+            }}>
+              <img 
+                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80" 
+                alt="Instructor"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
               <div style={{
                 position: 'absolute',
-                bottom: 30,
-                right: 0,
-                background: '#1E293B',
-                borderRadius: 8,
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                boxShadow: '0 8px 20px rgba(0,0,0,0.6)',
-                padding: 4,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-                zIndex: 60
+                bottom: 0,
+                insetInline: 0,
+                background: 'rgba(0,0,0,0.7)',
+                fontSize: 8,
+                color: '#FFFFFF',
+                textAlign: 'center',
+                padding: '1px 0'
               }}>
-                {['1080p HD', '720p', '480p', 'Auto'].map(q => (
-                  <button
-                    key={q}
-                    onClick={() => { setStreamQuality(q); setShowQualityMenu(false); }}
-                    style={{
-                      background: streamQuality === q ? 'var(--color-accent-teal)' : 'transparent',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      padding: '5px 12px',
-                      borderRadius: 6,
-                      fontSize: 11,
-                      cursor: 'pointer',
-                      textAlign: 'left'
-                    }}
-                  >
-                    {q}
-                  </button>
-                ))}
+                {session?.instructor?.split(' ')[0] || 'Teacher'}
               </div>
-            )}
+            </div>
 
-            <button style={{ background: 'none', border: 'none', color: '#FFFFFF', cursor: 'pointer' }}>
-              <Maximize2 size={16} />
-            </button>
-          </div>
-        </div>
+            {/* Player Controls Bar */}
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              insetInline: 0,
+              background: 'linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 100%)',
+              padding: '8px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              color: '#FFFFFF'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  onClick={() => setIsMuted(!isMuted)}
+                  style={{ background: 'none', border: 'none', color: '#FFFFFF', cursor: 'pointer' }}
+                >
+                  {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                </button>
+                <span style={{ fontSize: 11, color: '#CBD5E1' }}>00:15:20 / 01:00:00</span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
+                <button
+                  onClick={() => setShowQualityMenu(!showQualityMenu)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    border: 'none',
+                    color: '#FFFFFF',
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {streamQuality}
+                </button>
+                <Maximize2 size={15} style={{ cursor: 'pointer' }} />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Raised Hand Banner notification */}
