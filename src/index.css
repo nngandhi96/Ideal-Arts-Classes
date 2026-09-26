@@ -237,16 +237,25 @@ html, body {
   transition: var(--transition-smooth);
 }
 
-/* In fullscreen / frameless mode */
+/* In modern portal / frameless mode */
 .android-phone-frame.frameless {
-  max-width: 460px;
-  height: 92vh;
-  border-radius: 24px;
-  box-shadow: var(--shadow-lg);
+  max-width: 580px;
+  height: 94vh;
+  border-radius: 28px;
+  box-shadow: 0 25px 70px -15px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.android-phone-frame.frameless::before,
+.android-phone-frame.frameless::after {
+  display: none;
+}
+
+.android-phone-frame.frameless .status-punch-hole {
+  display: none;
 }
 
 /* Android Hardware Bezel Buttons (Visual Accent) */
-.android-phone-frame::before {
+.android-phone-frame:not(.frameless)::before {
   content: '';
   position: absolute;
   top: 140px;
@@ -258,7 +267,7 @@ html, body {
   z-index: 20;
 }
 
-.android-phone-frame::after {
+.android-phone-frame:not(.frameless)::after {
   content: '';
   position: absolute;
   top: 220px;
@@ -523,4 +532,64 @@ html, body {
 
 .animate-slide-up {
   animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ==========================================================================
+   Responsive Adaptations (Native Mobile & Tablet Fullscreen)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .simulator-container {
+    padding: 0 !important;
+    background: var(--bg-app) !important;
+    min-height: 100vh !important;
+  }
+  .preview-toolbar {
+    display: none !important;
+  }
+  .simulator-ambient-glow {
+    display: none !important;
+  }
+  .android-phone-frame {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .android-phone-frame::before,
+  .android-phone-frame::after {
+    display: none !important;
+  }
+  .android-status-bar {
+    display: none !important;
+  }
+  .android-gesture-bar {
+    display: none !important;
+  }
+}
+
+/* Custom Scrollbar */
+.android-screen-content::-webkit-scrollbar {
+  width: 5px;
+}
+.android-screen-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.android-screen-content::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 10px;
+}
+.android-screen-content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-teal);
+}
+
+/* Card hover animation */
+.art-card {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+.art-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }

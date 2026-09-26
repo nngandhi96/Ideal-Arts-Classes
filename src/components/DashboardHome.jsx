@@ -5,10 +5,12 @@ import {
   Flame, Award, ArrowUpRight, Radio, Landmark, Scale, 
   Globe2, Globe, Brain, Feather, Home, Music, Calculator, 
   Atom, Scroll, Languages, CheckCircle2, Target, PenTool,
-  Layers, Filter, Database, Check
+  Layers, Filter, Database, Check, Search, MessageCircle, 
+  PhoneCall, Zap, X, Trophy
 } from 'lucide-react';
 import { CLASSES_CONFIG, SUBJECTS_BY_CLASS } from '../data/curriculumData';
 import { isSupabaseConfigured, announcementService, liveClassService } from '../lib/supabaseClient';
+import { QuickQuizModal } from './QuickQuizModal';
 
 // Icon resolver helper
 const getSubjectIcon = (iconName) => {
@@ -66,6 +68,19 @@ export function DashboardHome({
 
   const currentClassInfo = CLASSES_CONFIG.find(c => c.id === selectedClass) || CLASSES_CONFIG[0];
   const currentSubjects = SUBJECTS_BY_CLASS[selectedClass] || [];
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [quizSubject, setQuizSubject] = useState({ id: 'history', name: 'इतिहास (History)' });
+
+  const filteredSubjects = currentSubjects.filter(sub => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      sub.name.toLowerCase().includes(q) ||
+      sub.hindiName.toLowerCase().includes(q)
+    );
+  });
 
   const banners = [
     {
@@ -355,6 +370,166 @@ export function DashboardHome({
         </div>
       </div>
 
+      {/* 2b. Modern Search Bar */}
+      <div style={{
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center'
+      }}>
+        <Search size={16} style={{ position: 'absolute', left: 14, color: 'var(--text-tertiary)', pointerEvents: 'none' }} />
+        <input 
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="खोजें: विषय, अध्याय या VVI प्रश्न... (उदा. हड़प्पा, संविधान, मैथिली)"
+          style={{
+            width: '100%',
+            padding: '11px 36px 11px 40px',
+            borderRadius: 14,
+            border: '1.5px solid var(--border-subtle)',
+            background: 'var(--bg-surface)',
+            color: 'var(--text-primary)',
+            fontSize: 13,
+            outline: 'none',
+            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+            boxShadow: 'var(--shadow-xs)'
+          }}
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            style={{
+              position: 'absolute',
+              right: 12,
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-tertiary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <X size={15} />
+          </button>
+        )}
+      </div>
+
+      {/* 2c. Bihar Board 2026 Target & Streak Widget */}
+      <div style={{
+        background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
+        borderRadius: 16,
+        padding: '14px 16px',
+        color: '#FFFFFF',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        boxShadow: '0 8px 24px -4px rgba(15, 23, 42, 0.4)',
+        border: '1px solid rgba(255, 255, 255, 0.08)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              background: 'rgba(239, 68, 68, 0.2)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              color: '#F87171',
+              padding: '2px 8px',
+              borderRadius: 9999,
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: '0.04em'
+            }}>
+              TARGET 2026
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 700 }}>
+              बिहार बोर्ड परीक्षा
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#F59E0B', fontSize: 12, fontWeight: 700 }}>
+            <Flame size={15} fill="#F59E0B" />
+            <span>7 Days Streak</span>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, opacity: 0.9 }}>
+          <span>सत्र प्रगति (Syllabus Covered)</span>
+          <strong style={{ color: '#2DD4BF' }}>68% Complete</strong>
+        </div>
+
+        <div style={{ height: 6, background: 'rgba(255, 255, 255, 0.15)', borderRadius: 9999, overflow: 'hidden' }}>
+          <div style={{ width: '68%', height: '100%', background: 'linear-gradient(90deg, #0D9488 0%, #2DD4BF 100%)', borderRadius: 9999 }} />
+        </div>
+      </div>
+
+      {/* 2d. Quick Practice Quiz Banner */}
+      <div 
+        onClick={() => {
+          setQuizSubject({ id: 'history', name: 'इतिहास (History)' });
+          setIsQuizOpen(true);
+        }}
+        className="art-card"
+        style={{
+          padding: '12px 16px',
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.12) 100%)',
+          border: '1.5px solid rgba(245, 158, 11, 0.3)',
+          borderRadius: 14,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          transition: 'all 0.2s ease'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#FFFFFF',
+            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+          }}>
+            <Zap size={20} fill="#FFFFFF" />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>
+                वस्तुनिष्ठ (MCQ) लाइव टेस्ट
+              </span>
+              <span style={{ fontSize: 9, fontWeight: 800, background: '#F59E0B', color: '#FFF', padding: '1px 6px', borderRadius: 4 }}>
+                50 MARKS
+              </span>
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+              5 महत्वपूर्ण प्रश्नों का टेस्ट दें और तुरंत स्कोर देखें
+            </p>
+          </div>
+        </div>
+
+        <button
+          style={{
+            background: '#F59E0B',
+            color: '#FFFFFF',
+            border: 'none',
+            padding: '7px 12px',
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            cursor: 'pointer'
+          }}
+        >
+          <span>टेस्ट दें</span>
+          <ChevronRight size={13} />
+        </button>
+      </div>
+
       {/* 3. DEDICATED OBJECTIVE & SUBJECTIVE DIVISION (For Class 11th & 12th) */}
       {currentClassInfo.hasObjectiveSubjectiveSplit && (
         <div style={{
@@ -606,7 +781,7 @@ export function DashboardHome({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div>
             <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
-              {currentClassInfo.name} पाठ्यक्रम ({currentSubjects.length} Subjects)
+              {currentClassInfo.name} पाठ्यक्रम ({filteredSubjects.length} {searchQuery ? 'Found' : 'Subjects'})
             </h3>
             <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
               {currentClassInfo.stream}
@@ -632,28 +807,48 @@ export function DashboardHome({
           </button>
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 10
-        }}>
-          {currentSubjects.map((sub) => {
-            const Icon = getSubjectIcon(sub.icon);
-            return (
-              <div
-                key={sub.id}
-                onClick={() => onNavigate('library')}
-                className="art-card"
-                style={{
-                  padding: '12px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                  position: 'relative',
-                  borderTop: `3px solid ${sub.color}`
-                }}
-              >
+        {filteredSubjects.length === 0 ? (
+          <div style={{
+            padding: '24px 16px',
+            textAlign: 'center',
+            background: 'var(--bg-surface-subtle)',
+            borderRadius: 14,
+            border: '1px dashed var(--border-subtle)'
+          }}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>
+              "{searchQuery}" के लिए कोई विषय नहीं मिला
+            </p>
+            <button
+              onClick={() => setSearchQuery('')}
+              className="btn-secondary"
+              style={{ fontSize: 12, padding: '6px 14px' }}
+            >
+              सभी विषय देखें
+            </button>
+          </div>
+        ) : (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: 10
+          }}>
+            {filteredSubjects.map((sub) => {
+              const Icon = getSubjectIcon(sub.icon);
+              return (
+                <div
+                  key={sub.id}
+                  onClick={() => onNavigate('library')}
+                  className="art-card"
+                  style={{
+                    padding: '12px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                    position: 'relative',
+                    borderTop: `3px solid ${sub.color}`
+                  }}
+                >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{
                     width: 36,
@@ -743,7 +938,8 @@ export function DashboardHome({
             );
           })}
         </div>
-      </div>
+      )}
+    </div>
 
       {/* 6. Quick Access 4-Grid */}
       <div>
@@ -956,6 +1152,7 @@ export function DashboardHome({
         </div>
 
         <button
+          onClick={() => onOpenLiveRoom && onOpenLiveRoom()}
           style={{
             background: 'var(--color-accent-teal)',
             color: '#FFFFFF',
@@ -975,6 +1172,134 @@ export function DashboardHome({
           <ArrowUpRight size={13} />
         </button>
       </div>
+
+      {/* 7. TOPPERS' HALL OF FAME (गौरव स्तम्भ) */}
+      <div className="art-card" style={{
+        padding: '16px',
+        background: 'linear-gradient(135deg, rgba(15, 118, 110, 0.08) 0%, rgba(30, 41, 59, 0.04) 100%)',
+        border: '1px solid rgba(13, 148, 136, 0.25)',
+        borderRadius: 16
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: '#F59E0B',
+              color: '#FFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Trophy size={16} />
+            </div>
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                Ideal Arts Toppers (कला गौरव)
+              </h4>
+              <p style={{ fontSize: 10, color: 'var(--text-secondary)', margin: 0 }}>
+                बिहार बोर्ड 12वीं कला संकाय 2024-2025
+              </p>
+            </div>
+          </div>
+          <span style={{ fontSize: 10, fontWeight: 800, color: '#059669', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: 9999 }}>
+            98.4% Results
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+          {[
+            { name: 'पूजा कुमारी', score: '458/500', rank: 'जिला प्रथम', badge: '🥇 91.6%' },
+            { name: 'अमित कुमार', score: '446/500', rank: 'Top 10 State', badge: '🥈 89.2%' },
+            { name: 'खुशी मिश्रा', score: '442/500', rank: 'इतिहास 96/100', badge: '🥉 88.4%' }
+          ].map((topper, idx) => (
+            <div key={idx} style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 10,
+              padding: '10px 8px',
+              textAlign: 'center',
+              boxShadow: 'var(--shadow-xs)'
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 2 }}>
+                {topper.name}
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--color-accent-teal)' }}>
+                {topper.score}
+              </div>
+              <div style={{ fontSize: 9, color: 'var(--text-secondary)', marginTop: 2 }}>
+                {topper.rank}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 8. FACULTY HELPLINE & DOUBT CLEARING */}
+      <div style={{
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 14,
+        padding: '12px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        boxShadow: 'var(--shadow-xs)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: 'rgba(37, 211, 102, 0.12)',
+            color: '#25D366',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <MessageCircle size={18} />
+          </div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-primary)' }}>
+              शिक्षक सहायता केंद्र (24x7 Faculty Helpline)
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
+              किसी भी प्रश्न या नोट्स के लिए सीधे कॉल / WhatsApp करें
+            </div>
+          </div>
+        </div>
+
+        <a
+          href="https://wa.me/919876543210?text=Namaste%20Sir%2C%20I%20have%20a%20doubt%20in%20Arts%20classes"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            background: '#25D366',
+            color: '#FFFFFF',
+            padding: '7px 12px',
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 800,
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4
+          }}
+        >
+          <span>WhatsApp</span>
+        </a>
+      </div>
+
+      {/* Quick Quiz Interactive Modal */}
+      {isQuizOpen && (
+        <QuickQuizModal 
+          subjectId={quizSubject.id} 
+          subjectName={quizSubject.name} 
+          onClose={() => setIsQuizOpen(false)} 
+        />
+      )}
 
     </div>
   );

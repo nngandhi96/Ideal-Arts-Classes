@@ -27,8 +27,8 @@ export default function App() {
   const [selectedClass, setSelectedClass] = useState('12th'); // '12th' | '11th' | '10th' | '9th' | '8th'
   const [selectedMode, setSelectedMode] = useState('all'); // 'all' | 'objective' | 'subjective'
   
-  // Simulator Viewport State
-  const [isFrameless, setIsFrameless] = useState(false);
+  // Simulator Viewport State (default to true for sleek modern web view)
+  const [isFrameless, setIsFrameless] = useState(true);
   const [currentTime, setCurrentTime] = useState('10:30');
 
   // Live digital clock for Android status bar
@@ -138,7 +138,7 @@ export default function App() {
             title="Toggle Android Device Frame"
           >
             <Smartphone size={14} />
-            <span>{isFrameless ? 'Expanded' : 'Pixel Frame'}</span>
+            <span>{isFrameless ? 'Phone Frame' : 'Web View'}</span>
           </button>
         </div>
       </header>

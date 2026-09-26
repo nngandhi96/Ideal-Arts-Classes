@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Sparkles, ArrowRight, ShieldCheck, Phone, CheckCircle2, 
-  Palette, Video, Award, ChevronRight, RefreshCw 
+  Palette, Video, Award, ChevronRight, RefreshCw, BookOpen, Target, Landmark
 } from 'lucide-react';
 
 export function SplashOnboarding({ onFinishAuth }) {
@@ -13,25 +13,25 @@ export function SplashOnboarding({ onFinishAuth }) {
 
   const slides = [
     {
-      title: "Direct Access to Master Artists",
-      subtitle: "Live interactive classrooms with two-way audio, real-time critique, and HD multi-angle easel cameras.",
-      tag: "Live Interactive Studio",
-      icon: Video,
+      title: "बिहार बोर्ड कला संकाय का नंबर #1 संस्थान",
+      subtitle: "कक्षा 11वीं एवं 12वीं के इतिहास, भूगोल, राजनीति विज्ञान, अर्थशास्त्र और सभी 8 विषयों की सम्पूर्ण तैयारी।",
+      tag: "Bihar Board Arts Special",
+      icon: Landmark,
       color: "#0D9488"
     },
     {
-      title: "Traditional Heritage & Modern Fine Arts",
-      subtitle: "Comprehensive curriculum covering Portrait Anatomy, Watercolors, Oil, Acrylic, and Classical Indian Art forms.",
-      tag: "Certified Curriculum",
-      icon: Palette,
-      color: "#FF6B4A"
+      title: "ऑब्जेक्टिव (50 Marks) & विषयनिष्ठ विशेष नोट्स",
+      subtitle: "100% सटीक VVI MCQs, OMR टेस्ट सीरीज़ और 2 व 5 अंकों वाले प्रश्नों के लिए हस्तलिखित उत्तर पुस्तिका।",
+      tag: "50/50 Target Strategy",
+      icon: Target,
+      color: "#F59E0B"
     },
     {
-      title: "Personalized Portfolio & Mentorship",
-      subtitle: "Get step-by-step guidance on your artwork, exhibition submissions, and government-certified diplomas.",
-      tag: "Government Recognized",
-      icon: Award,
-      color: "#1E293B"
+      title: "लाइव लेक्चर्स और डिजिटल लाइब्रेरी",
+      subtitle: "विशेषज्ञ शिक्षकों द्वारा लाइव कक्षाएं, रिकॉर्डिंग और हाई-क्वालिटी डाउनलोडेबल PDF नोट्स कभी भी, कहीं भी।",
+      tag: "कला ज्ञानं जीवनम्",
+      icon: BookOpen,
+      color: "#10B981"
     }
   ];
 
