@@ -20,7 +20,8 @@ export function ProfileSection({
   onToggleTheme, 
   onLogout,
   language = 'en',
-  onSelectLanguage
+  onSelectLanguage,
+  onOpenAdmin
 }) {
   const t = translations[language] || translations.en;
 
@@ -247,7 +248,58 @@ export function ProfileSection({
       {/* App & Academic Settings List */}
       <div className="art-card" style={{ padding: '6px 0', overflow: 'hidden' }}>
         
-        {/* NEW: Language Switcher Setting Item */}
+        {/* Admin Portal Gateway */}
+        <div 
+          onClick={onOpenAdmin}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 16px',
+            cursor: 'pointer',
+            borderBottom: '1px solid var(--border-subtle)',
+            background: 'linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(30, 41, 59, 0.04) 100%)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 34,
+              height: 34,
+              borderRadius: 8,
+              background: 'linear-gradient(135deg, #0D9488 0%, #115E59 100%)',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(13, 148, 136, 0.3)'
+            }}>
+              <ShieldCheck size={18} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  {language === 'hi' ? 'शिक्षक / एडमिन पोर्टल' : 'Faculty & Admin Portal'}
+                </h4>
+                <span style={{
+                  fontSize: 9,
+                  fontWeight: 800,
+                  background: 'var(--color-accent-teal)',
+                  color: '#FFFFFF',
+                  padding: '1px 5px',
+                  borderRadius: 4
+                }}>
+                  CONTROL
+                </span>
+              </div>
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+                {language === 'hi' ? 'लाइव क्लास, नोट्स और छात्र प्रबंधन' : 'Manage live classes, notes & student directory'}
+              </p>
+            </div>
+          </div>
+          <ChevronRight size={16} color="var(--color-accent-teal)" />
+        </div>
+
+        {/* Language Switcher Setting Item */}
         <div style={{
           display: 'flex',
           alignItems: 'center',

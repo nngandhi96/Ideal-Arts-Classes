@@ -13,6 +13,7 @@ import { ProfileSection } from './components/ProfileSection';
 import { BottomNavBar } from './components/BottomNavBar';
 import { NotificationsModal } from './components/NotificationsModal';
 import { PdfViewerModal } from './components/PdfViewerModal';
+import { AdminPanel } from './components/AdminPanel';
 
 export default function App() {
   // App state
@@ -107,7 +108,8 @@ export default function App() {
               { id: 'home', label: language === 'hi' ? 'होम' : 'Home' },
               { id: 'live', label: language === 'hi' ? 'लाइव' : 'Live' },
               { id: 'library', label: language === 'hi' ? 'लाइब्रेरी' : 'Library' },
-              { id: 'profile', label: language === 'hi' ? 'प्रोफ़ाइल' : 'Profile' }
+              { id: 'profile', label: language === 'hi' ? 'प्रोफ़ाइल' : 'Profile' },
+              { id: 'admin', label: language === 'hi' ? '🛡️ एडमिन' : '🛡️ Admin' }
             ].map(screen => (
               <button
                 key={screen.id}
@@ -283,6 +285,15 @@ export default function App() {
                   onLogout={handleLogout}
                   language={language}
                   onSelectLanguage={setLanguage}
+                  onOpenAdmin={() => setCurrentTab('admin')}
+                />
+              )}
+
+              {currentTab === 'admin' && (
+                <AdminPanel 
+                  onBackToApp={() => setCurrentTab('home')}
+                  language={language}
+                  onSelectLanguage={setLanguage}
                 />
               )}
             </>
@@ -308,7 +319,7 @@ export default function App() {
         </div>
 
         {/* Material 3 Bottom Navigation Bar */}
-        {isAuthenticated && !isLiveRoomOpen && (
+        {isAuthenticated && !isLiveRoomOpen && currentTab !== 'admin' && (
           <BottomNavBar 
             currentTab={currentTab} 
             onSelectTab={(tab) => setCurrentTab(tab)} 
