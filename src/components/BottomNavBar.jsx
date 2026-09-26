@@ -1,12 +1,15 @@
 import React from 'react';
 import { Home, Radio, BookOpen, User } from 'lucide-react';
+import { translations } from '../data/translations';
 
-export function BottomNavBar({ currentTab, onSelectTab }) {
+export function BottomNavBar({ currentTab, onSelectTab, language = 'en' }) {
+  const t = translations[language]?.nav || translations.en.nav;
+
   const tabs = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'live', label: 'Live Classes', icon: Radio, hasLiveBadge: true },
-    { id: 'library', label: 'Library', icon: BookOpen },
-    { id: 'profile', label: 'Profile', icon: User }
+    { id: 'home', label: t.home, icon: Home },
+    { id: 'live', label: t.live, icon: Radio, hasLiveBadge: true },
+    { id: 'library', label: t.library, icon: BookOpen },
+    { id: 'profile', label: t.profile, icon: User }
   ];
 
   return (

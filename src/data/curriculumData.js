@@ -1089,3 +1089,46 @@ export const LIVE_CLASSES_CONFIG = [
     badgeColor: '#2563EB'
   }
 ];
+
+export function getSubjectDisplayName(subject, lang = 'en') {
+  if (!subject) return '';
+  if (typeof subject === 'string') {
+    const match = subject.match(/^(.*?)\s*\((.*?)\)$/);
+    if (match) {
+      return lang === 'hi' ? match[2].trim() : match[1].trim();
+    }
+    return subject;
+  }
+  return lang === 'hi' ? (subject.hindiName || subject.name) : (subject.name || subject.hindiName);
+}
+
+export function getClassDisplayName(cls, lang = 'en') {
+  if (!cls) return '';
+  if (typeof cls === 'string') {
+    const found = CLASSES_CONFIG.find(c => c.id === cls);
+    if (found) {
+      return lang === 'hi' ? found.hindiName : found.name;
+    }
+    return cls;
+  }
+  return lang === 'hi' ? (cls.hindiName || cls.name) : (cls.name || cls.hindiName);
+}
+
+export function getClassStreamDisplayName(cls, lang = 'en') {
+  if (!cls) return '';
+  const obj = typeof cls === 'string' ? CLASSES_CONFIG.find(c => c.id === cls) : cls;
+  if (!obj) return '';
+  if (lang === 'hi') {
+    if (obj.id === '12th' || obj.id === '11th') return 'कला संकाय';
+    if (obj.id === '10th') return 'मैट्रिक (बोर्ड परीक्षा)';
+    if (obj.id === '9th') return 'उच्च विद्यालय';
+    if (obj.id === '8th') return 'मध्य विद्यालय';
+    return obj.stream;
+  } else {
+    if (obj.id === '12th' || obj.id === '11th') return 'Arts Stream';
+    if (obj.id === '10th') return 'Matriculation';
+    if (obj.id === '9th') return 'High School';
+    if (obj.id === '8th') return 'Middle School';
+    return obj.stream.replace(/\(.*?\)/g, '').trim();
+  }
+}

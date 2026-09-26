@@ -8,7 +8,14 @@ import {
   Layers, Filter, Database, Check, Search, MessageCircle, 
   PhoneCall, Zap, X, Trophy
 } from 'lucide-react';
-import { CLASSES_CONFIG, SUBJECTS_BY_CLASS } from '../data/curriculumData';
+import { 
+  CLASSES_CONFIG, 
+  SUBJECTS_BY_CLASS,
+  getSubjectDisplayName,
+  getClassDisplayName,
+  getClassStreamDisplayName
+} from '../data/curriculumData';
+import { translations } from '../data/translations';
 import { isSupabaseConfigured, announcementService, liveClassService } from '../lib/supabaseClient';
 import { QuickQuizModal } from './QuickQuizModal';
 
@@ -39,8 +46,11 @@ export function DashboardHome({
   onSelectMode, 
   onNavigate, 
   onOpenLiveRoom, 
-  onOpenNotifications 
+  onOpenNotifications,
+  language = 'en'
 }) {
+  const t = translations[language] || translations.en;
+
   const [activeBanner, setActiveBanner] = useState(0);
   const [supabaseAnnouncements, setSupabaseAnnouncements] = useState([]);
   const [liveDbClasses, setLiveDbClasses] = useState([]);
@@ -71,7 +81,10 @@ export function DashboardHome({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isQuizOpen, setIsQuizOpen] = useState(false);
-  const [quizSubject, setQuizSubject] = useState({ id: 'history', name: 'इतिहास (History)' });
+  const [quizSubject, setQuizSubject] = useState({ 
+    id: 'history', 
+    name: language === 'hi' ? 'इतिहास' : 'History' 
+  });
 
   const filteredSubjects = currentSubjects.filter(sub => {
     if (!searchQuery.trim()) return true;
@@ -82,32 +95,32 @@ export function DashboardHome({
     );
   });
 
-  const banners = [
+  const bannersEn = [
     {
       id: 1,
       tag: "Bihar Board 2026",
-      title: "Arts संकाय: 50/50 Objective OMR Target Batch",
-      instructor: "विशेषज्ञ शिक्षकों द्वारा वस्तुनिष्ठ प्रश्न महा-मैराथन",
+      title: "Arts Stream: 50/50 Objective OMR Target Batch",
+      instructor: "Master Faculty Marathon for VVI MCQs",
       date: "Daily Live • 05:00 PM",
-      badge: "100% Guaranteed Hit",
+      badge: "Target 50/50",
       bgGradient: "linear-gradient(135deg, #1E293B 0%, #0F172A 100%)",
       accentColor: "#2DD4BF"
     },
     {
       id: 2,
       tag: "Topper Strategy",
-      title: "विषयनिष्ठ (Subjective) उत्तर लेखन मास्टरक्लास",
-      instructor: "2 व 5 अंकों वाले प्रश्नों में पूरे अंक कैसे प्राप्त करें",
+      title: "Subjective Answer Writing Masterclass",
+      instructor: "How to score full marks in 2 and 5 marks questions",
       date: "Sunday Special • 10:30 AM",
-      badge: "Model Answer Sheet",
+      badge: "Model Answers",
       bgGradient: "linear-gradient(135deg, #0F766E 0%, #115E59 100%)",
       accentColor: "#F59E0B"
     },
     {
       id: 3,
-      tag: "Special Lecture",
-      title: "मैथिली ओ हिन्दी: गद्य-पद्य सम्पूर्ण व्याख्या माला",
-      instructor: "आचार्य रामनाथ झा एवं पं. विद्याधर शास्त्री",
+      tag: "Literature Special",
+      title: "Hindi & Maithili: Complete Poetry & Prose Analysis",
+      instructor: "Acharya Ramnath Jha & Pt. Vidyadhar Shastri",
       date: "Live in Studio • 06:30 PM",
       badge: "High Scoring",
       bgGradient: "linear-gradient(135deg, #334155 0%, #1E293B 100%)",
@@ -115,11 +128,46 @@ export function DashboardHome({
     }
   ];
 
+  const bannersHi = [
+    {
+      id: 1,
+      tag: "बिहार बोर्ड 2026",
+      title: "कला संकाय: 50/50 वस्तुनिष्ठ OMR टारगेट बैच",
+      instructor: "विशेषज्ञ शिक्षकों द्वारा VVI MCQs महा-मैराथन",
+      date: "दैनिक लाइव • शाम 05:00 बजे",
+      badge: "100% सटीक तैयारी",
+      bgGradient: "linear-gradient(135deg, #1E293B 0%, #0F172A 100%)",
+      accentColor: "#2DD4BF"
+    },
+    {
+      id: 2,
+      tag: "टॉपर रणनीति",
+      title: "विषयनिष्ठ (Subjective) उत्तर लेखन मास्टरक्लास",
+      instructor: "2 व 5 अंकों वाले प्रश्नों में पूरे अंक कैसे प्राप्त करें",
+      date: "रविवार स्पेशल • सुबह 10:30 बजे",
+      badge: "मॉडल उत्तर पुस्तिका",
+      bgGradient: "linear-gradient(135deg, #0F766E 0%, #115E59 100%)",
+      accentColor: "#F59E0B"
+    },
+    {
+      id: 3,
+      tag: "साहित्य विशेष",
+      title: "मैथिली एवं हिन्दी: गद्य-पद्य सम्पूर्ण व्याख्या माला",
+      instructor: "आचार्य रामनाथ झा एवं पं. विद्याधर शास्त्री",
+      date: "लाइव स्टूडियो • शाम 06:30 बजे",
+      badge: "स्कोरिंग विषय",
+      bgGradient: "linear-gradient(135deg, #334155 0%, #1E293B 100%)",
+      accentColor: "#EC4899"
+    }
+  ];
+
+  const banners = language === 'hi' ? bannersHi : bannersEn;
+
   const quickAccess = [
     {
       id: 'live',
-      title: 'Live Classes',
-      subtitle: '1 Live Now',
+      title: language === 'hi' ? 'लाइव कक्षाएं' : 'Live Classes',
+      subtitle: language === 'hi' ? '1 क्लास अभी लाइव' : '1 Class Live Now',
       icon: Radio,
       badge: 'LIVE',
       tintBg: 'rgba(239, 68, 68, 0.08)',
@@ -129,10 +177,10 @@ export function DashboardHome({
     },
     {
       id: 'notes',
-      title: 'Study Material',
-      subtitle: 'Chapter PDFs & Notes',
+      title: language === 'hi' ? 'अध्ययन सामग्री' : 'Study Notes',
+      subtitle: language === 'hi' ? 'अध्यायवार नोट्स & PDF' : 'Chapter PDFs & Notes',
       icon: BookOpen,
-      badge: 'Updated',
+      badge: language === 'hi' ? 'अपडेटेड' : 'Updated',
       tintBg: 'rgba(13, 148, 136, 0.08)',
       iconColor: '#0D9488',
       badgeColor: '#0D9488',
@@ -140,8 +188,8 @@ export function DashboardHome({
     },
     {
       id: 'objective',
-      title: 'Objective Bank',
-      subtitle: 'MCQ & OMR Quizzes',
+      title: language === 'hi' ? 'ऑब्जेक्टिव बैंक' : 'Objective Bank',
+      subtitle: language === 'hi' ? 'MCQ व OMR क्विज़' : 'MCQs & OMR Drills',
       icon: Target,
       badge: '50 Marks',
       tintBg: 'rgba(16, 185, 129, 0.08)',
@@ -154,13 +202,13 @@ export function DashboardHome({
     },
     {
       id: 'subjective',
-      title: 'Subjective Q&A',
-      subtitle: 'Short & Long Answers',
+      title: language === 'hi' ? 'विषयनिष्ठ बैंक' : 'Subjective Bank',
+      subtitle: language === 'hi' ? 'हस्तलिखित उत्तर' : 'Model Answer Sheets',
       icon: PenTool,
       badge: '50 Marks',
-      tintBg: 'rgba(99, 102, 241, 0.08)',
-      iconColor: '#6366F1',
-      badgeColor: '#6366F1',
+      tintBg: 'rgba(37, 99, 235, 0.08)',
+      iconColor: '#2563EB',
+      badgeColor: '#2563EB',
       action: () => {
         if (onSelectMode) onSelectMode('subjective');
         onNavigate('library');
@@ -168,31 +216,41 @@ export function DashboardHome({
     }
   ];
 
+  const toppersList = language === 'hi' ? [
+    { name: 'पूजा कुमारी', score: '458/500', rank: 'जिला प्रथम (Rank 1)', badge: '🥇 91.6%' },
+    { name: 'अमित कुमार', score: '446/500', rank: 'राज्य टॉप 10', badge: '🥈 89.2%' },
+    { name: 'खुशी मिश्रा', score: '442/500', rank: 'इतिहास 96/100', badge: '🥉 88.4%' }
+  ] : [
+    { name: 'Pooja Kumari', score: '458/500', rank: 'District Rank 1', badge: '🥇 91.6%' },
+    { name: 'Amit Kumar', score: '446/500', rank: 'State Top 10', badge: '🥈 89.2%' },
+    { name: 'Khushi Mishra', score: '442/500', rank: 'History 96/100', badge: '🥉 88.4%' }
+  ];
+
   return (
-    <div style={{ padding: '16px 16px 80px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div style={{ padding: '16px 16px 80px', display: 'flex', flexDirection: 'column', gap: 16 }}>
       
-      {/* 1. Top Bar: Greeting & Enrolled Class */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '4px 2px'
-      }}>
+      {/* 1. Header with Student Greeting & Live Sync indicator */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Avatar with Status */}
           <div style={{ position: 'relative' }}>
-            <img 
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" 
-              alt="Aarav Sharma"
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '2px solid var(--color-accent-teal)',
-                boxShadow: 'var(--shadow-sm)'
-              }}
-            />
-            <span style={{
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #0D9488 0%, #115E59 100%)',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: 16,
+              boxShadow: '0 4px 12px rgba(13, 148, 136, 0.25)',
+              border: '2px solid var(--bg-surface)'
+            }}>
+              AS
+            </div>
+            <div style={{
               position: 'absolute',
               bottom: 0,
               right: 0,
@@ -207,26 +265,27 @@ export function DashboardHome({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>
-                नमस्ते 🙏
+                {t.dashboard.greeting}
               </span>
               <span style={{
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: 700,
                 color: 'var(--color-accent-teal)',
                 background: 'var(--color-accent-teal-tint)',
-                padding: '1px 8px',
+                padding: '2px 8px',
                 borderRadius: 9999,
                 letterSpacing: '0.02em'
               }}>
-                {currentClassInfo.hindiName} ({currentClassInfo.stream.split(' ')[0]})
+                {getClassDisplayName(currentClassInfo, language)} • {getClassStreamDisplayName(currentClassInfo, language)}
               </span>
             </div>
             <h2 style={{
-              fontSize: 16,
+              fontSize: 17,
               fontWeight: 800,
               color: 'var(--text-primary)',
               fontFamily: 'var(--font-sans)',
-              letterSpacing: '-0.01em'
+              letterSpacing: '-0.01em',
+              margin: '2px 0 0'
             }}>
               Aarav Sharma
             </h2>
@@ -238,132 +297,91 @@ export function DashboardHome({
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 5,
-              fontSize: 10,
-              fontWeight: 700,
-              color: '#059669',
-              background: 'rgba(16, 185, 129, 0.1)',
+              gap: 4,
+              background: 'rgba(16, 185, 129, 0.12)',
               border: '1px solid rgba(16, 185, 129, 0.25)',
               padding: '4px 8px',
-              borderRadius: 9999
+              borderRadius: 9999,
+              fontSize: 10,
+              fontWeight: 700,
+              color: '#059669'
             }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
-              <span>DB Connected</span>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />
+              <span>Live Sync</span>
             </div>
           )}
 
           <button
             onClick={onOpenNotifications}
-            className="btn-icon"
-            style={{ position: 'relative', width: 40, height: 40 }}
+            style={{
+              position: 'relative',
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              boxShadow: 'var(--shadow-xs)'
+            }}
             aria-label="Notifications"
           >
             <Bell size={18} />
             <span style={{
               position: 'absolute',
-              top: 8,
+              top: 7,
               right: 8,
               width: 8,
               height: 8,
-              background: '#EF4444',
               borderRadius: '50%',
+              background: '#EF4444',
               border: '1.5px solid var(--bg-surface)'
             }} />
           </button>
         </div>
       </div>
 
-      {/* Dynamic Supabase Live Announcement Card */}
-      {supabaseAnnouncements.length > 0 && (
+      {/* 2. Class Selector Strip (Clean single line - NO secondary Hindi text underneath) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(13, 148, 136, 0.08) 100%)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          borderRadius: 12,
-          padding: '10px 14px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.08)'
-        }}>
-          <div style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            background: '#10B981',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#FFFFFF',
-            flexShrink: 0
-          }}>
-            <Database size={16} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-              <span style={{ fontSize: 9, fontWeight: 800, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Supabase Live Notice
-              </span>
-              <span style={{ fontSize: 9, background: 'rgba(16, 185, 129, 0.2)', color: '#047857', padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>
-                {supabaseAnnouncements[0].priority?.toUpperCase()}
-              </span>
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {supabaseAnnouncements[0].title}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.3 }}>
-              {supabaseAnnouncements[0].message}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Interactive Class Selector Bar (Class 12th, 11th, 10th, 9th, 8th) */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, padding: '0 2px' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Select Class / कक्षा चुनें
-          </span>
-          <span style={{ fontSize: 11, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
-            {currentClassInfo.badge}
-          </span>
-        </div>
-
-        <div style={{
-          display: 'flex',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(5, 1fr)',
           gap: 6,
-          overflowX: 'auto',
-          paddingBottom: 4,
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
+          background: 'var(--bg-surface-subtle)',
+          padding: 4,
+          borderRadius: 12,
+          border: '1px solid var(--border-subtle)'
         }}>
-          {CLASSES_CONFIG.map((cls) => {
+          {CLASSES_CONFIG.map(cls => {
             const isSelected = selectedClass === cls.id;
             return (
               <button
                 key={cls.id}
-                onClick={() => onSelectClass(cls.id)}
+                onClick={() => onSelectClass && onSelectClass(cls.id)}
                 style={{
-                  flex: '0 0 auto',
-                  padding: '8px 14px',
-                  borderRadius: 12,
+                  padding: '9px 4px',
+                  borderRadius: 8,
                   border: isSelected 
                     ? '1.5px solid var(--color-accent-teal)' 
-                    : '1px solid var(--border-subtle)',
+                    : '1px solid transparent',
                   background: isSelected 
-                    ? 'linear-gradient(135deg, rgba(13, 148, 136, 0.15) 0%, rgba(45, 212, 191, 0.08) 100%)' 
-                    : 'var(--bg-surface)',
-                  color: isSelected ? 'var(--color-accent-teal)' : 'var(--text-secondary)',
+                    ? 'var(--color-accent-teal)' 
+                    : 'transparent',
+                  color: isSelected ? '#FFFFFF' : 'var(--text-secondary)',
                   cursor: 'pointer',
                   display: 'flex',
-                  flexDirection: 'column',
                   alignItems: 'center',
-                  gap: 2,
+                  justifyContent: 'center',
                   transition: 'all 0.15s ease',
-                  boxShadow: isSelected ? '0 4px 12px rgba(13, 148, 136, 0.15)' : 'var(--shadow-xs)'
+                  boxShadow: isSelected ? '0 2px 8px rgba(13, 148, 136, 0.25)' : 'none'
                 }}
               >
-                <span style={{ fontSize: 12, fontWeight: 800 }}>{cls.name}</span>
-                <span style={{ fontSize: 10, fontWeight: 500, opacity: 0.85 }}>{cls.hindiName}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  {getClassDisplayName(cls, language)}
+                </span>
               </button>
             );
           })}
@@ -381,22 +399,21 @@ export function DashboardHome({
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="खोजें: विषय, अध्याय या VVI प्रश्न... (उदा. हड़प्पा, संविधान, मैथिली)"
+          placeholder={t.dashboard.searchPlaceholder}
           style={{
             width: '100%',
-            padding: '11px 36px 11px 40px',
-            borderRadius: 14,
-            border: '1.5px solid var(--border-subtle)',
+            padding: '11px 36px 11px 38px',
             background: 'var(--bg-surface)',
-            color: 'var(--text-primary)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 14,
             fontSize: 13,
+            color: 'var(--text-primary)',
             outline: 'none',
-            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
             boxShadow: 'var(--shadow-xs)'
           }}
         />
         {searchQuery && (
-          <button
+          <button 
             onClick={() => setSearchQuery('')}
             style={{
               position: 'absolute',
@@ -414,7 +431,7 @@ export function DashboardHome({
         )}
       </div>
 
-      {/* 2c. Bihar Board 2026 Target & Streak Widget */}
+      {/* 2c. Target & Streak Widget */}
       <div style={{
         background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
         borderRadius: 16,
@@ -438,22 +455,22 @@ export function DashboardHome({
               fontWeight: 800,
               letterSpacing: '0.04em'
             }}>
-              TARGET 2026
+              {t.dashboard.targetBadge}
             </span>
             <span style={{ fontSize: 13, fontWeight: 700 }}>
-              बिहार बोर्ड परीक्षा
+              {t.dashboard.targetTitle}
             </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#F59E0B', fontSize: 12, fontWeight: 700 }}>
             <Flame size={15} fill="#F59E0B" />
-            <span>7 Days Streak</span>
+            <span>{t.dashboard.streakText}</span>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, opacity: 0.9 }}>
-          <span>सत्र प्रगति (Syllabus Covered)</span>
-          <strong style={{ color: '#2DD4BF' }}>68% Complete</strong>
+          <span>{t.dashboard.syllabusProgress}</span>
+          <strong style={{ color: '#2DD4BF' }}>{t.dashboard.completePercent}</strong>
         </div>
 
         <div style={{ height: 6, background: 'rgba(255, 255, 255, 0.15)', borderRadius: 9999, overflow: 'hidden' }}>
@@ -464,7 +481,10 @@ export function DashboardHome({
       {/* 2d. Quick Practice Quiz Banner */}
       <div 
         onClick={() => {
-          setQuizSubject({ id: 'history', name: 'इतिहास (History)' });
+          setQuizSubject({ 
+            id: 'history', 
+            name: language === 'hi' ? 'इतिहास' : 'History' 
+          });
           setIsQuizOpen(true);
         }}
         className="art-card"
@@ -498,14 +518,14 @@ export function DashboardHome({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>
-                वस्तुनिष्ठ (MCQ) लाइव टेस्ट
+                {t.dashboard.quizBannerTitle}
               </span>
               <span style={{ fontSize: 9, fontWeight: 800, background: '#F59E0B', color: '#FFF', padding: '1px 6px', borderRadius: 4 }}>
-                50 MARKS
+                {t.dashboard.quizBannerBadge}
               </span>
             </div>
             <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '2px 0 0' }}>
-              5 महत्वपूर्ण प्रश्नों का टेस्ट दें और तुरंत स्कोर देखें
+              {t.dashboard.quizBannerSub}
             </p>
           </div>
         </div>
@@ -525,7 +545,7 @@ export function DashboardHome({
             cursor: 'pointer'
           }}
         >
-          <span>टेस्ट दें</span>
+          <span>{t.dashboard.takeQuizBtn}</span>
           <ChevronRight size={13} />
         </button>
       </div>
@@ -558,7 +578,7 @@ export function DashboardHome({
                 ✓
               </div>
               <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>
-                बोर्ड परीक्षा प्रारूप (50% + 50%)
+                {t.dashboard.boardFormatTitle}
               </span>
             </div>
 
@@ -570,7 +590,7 @@ export function DashboardHome({
               padding: '2px 8px',
               borderRadius: 9999
             }}>
-              Subjective & Objective अलग-अलग
+              {t.dashboard.boardFormatBadge}
             </span>
           </div>
 
@@ -602,15 +622,15 @@ export function DashboardHome({
                   padding: '2px 6px',
                   borderRadius: 4
                 }}>
-                  50 अंक
+                  {t.dashboard.objectiveBoxBadge}
                 </span>
                 <Target size={18} color="#10B981" />
               </div>
-              <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>
-                Objective (वस्तुनिष्ठ)
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                {t.dashboard.objectiveBoxTitle}
               </h4>
-              <p style={{ fontSize: 10, color: 'var(--text-secondary)', lineHeight: 1.3 }}>
-                MCQs, OMR अभ्यास टेस्ट व पिछले वर्षों के प्रश्न
+              <p style={{ fontSize: 10, color: 'var(--text-secondary)', lineHeight: 1.3, margin: 0 }}>
+                {t.dashboard.objectiveBoxSub}
               </p>
             </div>
 
@@ -641,22 +661,22 @@ export function DashboardHome({
                   padding: '2px 6px',
                   borderRadius: 4
                 }}>
-                  50 अंक
+                  {t.dashboard.subjectiveBoxBadge}
                 </span>
                 <PenTool size={18} color="#2563EB" />
               </div>
-              <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>
-                Subjective (विषयनिष्ठ)
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                {t.dashboard.subjectiveBoxTitle}
               </h4>
-              <p style={{ fontSize: 10, color: 'var(--text-secondary)', lineHeight: 1.3 }}>
-                लघु व दीर्घ उत्तरीय हस्तलिखित मॉडल उत्तर नोट्स
+              <p style={{ fontSize: 10, color: 'var(--text-secondary)', lineHeight: 1.3, margin: 0 }}>
+                {t.dashboard.subjectiveBoxSub}
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* 4. Banner Carousel (Arts Target / Board Preparation) */}
+      {/* 4. Banner Carousel */}
       <div>
         <div style={{
           position: 'relative',
@@ -698,24 +718,29 @@ export function DashboardHome({
               }}>
                 {banners[activeBanner].tag}
               </span>
-              <span style={{ fontSize: 11, color: banners[activeBanner].accentColor, fontWeight: 700 }}>
+              <span style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: banners[activeBanner].accentColor,
+                background: 'rgba(0, 0, 0, 0.3)',
+                padding: '2px 8px',
+                borderRadius: 6
+              }}>
                 {banners[activeBanner].badge}
               </span>
             </div>
 
             <h3 style={{
-              fontSize: 15,
+              fontSize: 16,
               fontWeight: 800,
-              lineHeight: 1.35,
-              color: '#FFFFFF',
-              fontFamily: 'var(--font-sans)',
+              lineHeight: 1.3,
               marginBottom: 4,
-              maxWidth: '90%'
+              color: '#FFFFFF'
             }}>
               {banners[activeBanner].title}
             </h3>
 
-            <p style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.85)', fontWeight: 500 }}>
+            <p style={{ fontSize: 11, color: '#E2E8F0', opacity: 0.9 }}>
               {banners[activeBanner].instructor}
             </p>
           </div>
@@ -725,11 +750,10 @@ export function DashboardHome({
             alignItems: 'center',
             justifyContent: 'space-between',
             marginTop: 12,
-            paddingTop: 8,
-            borderTop: '1px solid rgba(255, 255, 255, 0.12)'
+            paddingTop: 10,
+            borderTop: '1px solid rgba(255, 255, 255, 0.15)'
           }}>
-            <span style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.75)', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Calendar size={12} />
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#CBD5E1' }}>
               {banners[activeBanner].date}
             </span>
 
@@ -737,19 +761,19 @@ export function DashboardHome({
               onClick={() => onNavigate('live')}
               style={{
                 background: '#FFFFFF',
-                color: '#1E293B',
+                color: '#0F172A',
                 border: 'none',
-                padding: '4px 10px',
-                borderRadius: 8,
+                padding: '6px 14px',
+                borderRadius: 9999,
                 fontSize: 11,
                 fontWeight: 700,
-                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 4
+                gap: 4,
+                cursor: 'pointer'
               }}
             >
-              <span>View Batch</span>
+              <span>{language === 'hi' ? 'बैच देखें' : 'View Batch'}</span>
               <ChevronRight size={12} />
             </button>
           </div>
@@ -776,15 +800,15 @@ export function DashboardHome({
         </div>
       </div>
 
-      {/* 5. SUBJECTS GRID FOR SELECTED CLASS */}
+      {/* 5. SUBJECTS GRID FOR SELECTED CLASS (Clean single-language title, no secondary stacked text) */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
-              {currentClassInfo.name} पाठ्यक्रम ({filteredSubjects.length} {searchQuery ? 'Found' : 'Subjects'})
+            <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', margin: 0 }}>
+              {getClassDisplayName(currentClassInfo, language)} {t.dashboard.subjectsSectionTitle} ({filteredSubjects.length})
             </h3>
             <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-              {currentClassInfo.stream}
+              {getClassStreamDisplayName(currentClassInfo, language)}
             </span>
           </div>
 
@@ -802,7 +826,7 @@ export function DashboardHome({
               gap: 2
             }}
           >
-            <span>All Material</span>
+            <span>{t.dashboard.allMaterialBtn}</span>
             <ChevronRight size={14} />
           </button>
         </div>
@@ -816,14 +840,22 @@ export function DashboardHome({
             border: '1px dashed var(--border-subtle)'
           }}>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>
-              "{searchQuery}" के लिए कोई विषय नहीं मिला
+              {t.dashboard.noResults} "{searchQuery}"
             </p>
             <button
               onClick={() => setSearchQuery('')}
-              className="btn-secondary"
-              style={{ fontSize: 12, padding: '6px 14px' }}
+              style={{
+                background: 'var(--color-accent-teal)',
+                color: '#FFFFFF',
+                border: 'none',
+                padding: '6px 14px',
+                borderRadius: 8,
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
             >
-              सभी विषय देखें
+              {language === 'hi' ? 'खोज साफ़ करें' : 'Clear Search'}
             </button>
           </div>
         ) : (
@@ -832,7 +864,7 @@ export function DashboardHome({
             gridTemplateColumns: 'repeat(2, 1fr)',
             gap: 10
           }}>
-            {filteredSubjects.map((sub) => {
+            {filteredSubjects.map(sub => {
               const Icon = getSubjectIcon(sub.icon);
               return (
                 <div
@@ -841,113 +873,114 @@ export function DashboardHome({
                   className="art-card"
                   style={{
                     padding: '12px',
-                    cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 8,
-                    position: 'relative',
-                    borderTop: `3px solid ${sub.color}`
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    position: 'relative'
                   }}
                 >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 10,
-                    background: sub.bgLight,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: sub.color
-                  }}>
-                    <Icon size={18} />
-                  </div>
-
-                  <span style={{
-                    fontSize: 9,
-                    fontWeight: 700,
-                    color: sub.color,
-                    background: sub.bgLight,
-                    padding: '2px 6px',
-                    borderRadius: 4
-                  }}>
-                    {sub.chapters} Chapters
-                  </span>
-                </div>
-
-                <div>
-                  <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-                    {sub.name}
-                  </h4>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: sub.color, marginTop: 1 }}>
-                    {sub.hindiName}
-                  </p>
-                </div>
-
-                {/* If Social Science group in 9th/10th, show 4 branches */}
-                {sub.isGroup && sub.branches && (
-                  <div style={{
-                    background: 'var(--bg-surface-subtle)',
-                    padding: '6px 8px',
-                    borderRadius: 8,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 3,
-                    marginTop: 2
-                  }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
-                      4 Branches:
-                    </span>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                      {sub.branches.map(b => (
-                        <span key={b.id} style={{
-                          fontSize: 9,
-                          fontWeight: 600,
-                          background: 'var(--bg-surface)',
-                          border: '1px solid var(--border-subtle)',
-                          padding: '1px 5px',
-                          borderRadius: 4,
-                          color: 'var(--text-secondary)'
-                        }}>
-                          {b.name.split(' ')[0]}
-                        </span>
-                      ))}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: sub.bgLight,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: sub.color
+                    }}>
+                      <Icon size={18} />
                     </div>
-                  </div>
-                )}
 
-                {/* For 11th & 12th: Show Objective & Subjective breakdown */}
-                {currentClassInfo.hasObjectiveSubjectiveSplit && (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingTop: 6,
-                    borderTop: '1px solid var(--border-subtle)',
-                    fontSize: 10
-                  }}>
-                    <span style={{ color: '#059669', fontWeight: 700 }}>
-                      🎯 {sub.objectiveCount}+ Obj
-                    </span>
-                    <span style={{ color: '#2563EB', fontWeight: 700 }}>
-                      📝 {sub.subjectiveCount}+ Subj
+                    <span style={{
+                      fontSize: 9,
+                      fontWeight: 700,
+                      color: sub.color,
+                      background: sub.bgLight,
+                      padding: '2px 6px',
+                      borderRadius: 4
+                    }}>
+                      {sub.chapters} {t.common.chapters}
                     </span>
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+
+                  <div>
+                    {/* Clean single language title without duplicate translation underneath */}
+                    <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2, margin: 0 }}>
+                      {getSubjectDisplayName(sub, language)}
+                    </h4>
+                    <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 3, margin: 0 }}>
+                      {sub.teacher}
+                    </p>
+                  </div>
+
+                  {/* If Social Science group in 9th/10th, show 4 branches */}
+                  {sub.isGroup && sub.branches && (
+                    <div style={{
+                      background: 'var(--bg-surface-subtle)',
+                      padding: '6px 8px',
+                      borderRadius: 8,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 3,
+                      marginTop: 2
+                    }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
+                        {language === 'hi' ? '4 शाखाएं:' : '4 Branches:'}
+                      </span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                        {sub.branches.map(b => (
+                          <span key={b.id} style={{
+                            fontSize: 9,
+                            fontWeight: 600,
+                            background: 'var(--bg-surface)',
+                            border: '1px solid var(--border-subtle)',
+                            padding: '1px 5px',
+                            borderRadius: 4,
+                            color: 'var(--text-secondary)'
+                          }}>
+                            {getSubjectDisplayName(b, language)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 11th & 12th Objective vs Subjective Counts */}
+                  {currentClassInfo.hasObjectiveSubjectiveSplit && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontSize: 10,
+                      paddingTop: 6,
+                      borderTop: '1px solid var(--border-subtle)'
+                    }}>
+                      <span style={{ color: '#059669', fontWeight: 700 }}>
+                        🎯 {sub.objectiveCount}+ {t.common.mcqs}
+                      </span>
+                      <span style={{ color: '#2563EB', fontWeight: 700 }}>
+                        📝 {sub.subjectiveCount}+ {t.common.notes}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* 6. Quick Access 4-Grid */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
-            Quick Study Tools
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', margin: 0 }}>
+            {t.dashboard.quickToolsTitle}
           </h3>
-          <span className="devanagari-tagline" style={{ fontSize: 12, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
+          <span style={{ fontSize: 11, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
             कला ज्ञानं जीवनम्
           </span>
         </div>
@@ -990,21 +1023,20 @@ export function DashboardHome({
                   <span style={{
                     fontSize: 9,
                     fontWeight: 800,
-                    letterSpacing: '0.04em',
                     color: item.badgeColor,
                     background: item.tintBg,
                     padding: '2px 6px',
-                    borderRadius: 6
+                    borderRadius: 4
                   }}>
                     {item.badge}
                   </span>
                 </div>
 
                 <div>
-                  <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>
+                  <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                     {item.title}
                   </h4>
-                  <p style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
+                  <p style={{ fontSize: 10, color: 'var(--text-secondary)', margin: '2px 0 0' }}>
                     {item.subtitle}
                   </p>
                 </div>
@@ -1014,91 +1046,7 @@ export function DashboardHome({
         </div>
       </div>
 
-      {/* 7. Continue Learning Card */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
-            Continue Preparation
-          </h3>
-          <span style={{ fontSize: 12, color: 'var(--color-accent-teal)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNavigate('library')}>
-            View History
-          </span>
-        </div>
-
-        <div className="art-card" style={{ padding: '12px', display: 'flex', gap: 12, alignItems: 'center' }}>
-          {/* Thumbnail preview */}
-          <div style={{
-            width: 70,
-            height: 70,
-            borderRadius: 12,
-            position: 'relative',
-            overflow: 'hidden',
-            flexShrink: 0,
-            background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#2DD4BF'
-          }}>
-            <BookOpen size={30} />
-          </div>
-
-          {/* Details & Progress */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-              <span style={{
-                fontSize: 9,
-                fontWeight: 700,
-                color: 'var(--color-accent-teal)',
-                background: 'var(--color-accent-teal-tint)',
-                padding: '1px 6px',
-                borderRadius: 4
-              }}>
-                इतिहास - अध्याय 1
-              </span>
-              <span style={{ fontSize: 10, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                <Clock size={10} />
-                20m left
-              </span>
-            </div>
-
-            <h4 style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              marginBottom: 6
-            }}>
-              हड़प्पा सभ्यता: नगर योजना एवं मोहरें (Objective + Subjective)
-            </h4>
-
-            {/* Sleek Progress Bar */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{
-                flex: 1,
-                height: 5,
-                background: 'var(--bg-surface-subtle)',
-                borderRadius: 9999,
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  width: '75%',
-                  height: '100%',
-                  background: 'linear-gradient(90deg, #0D9488 0%, #2DD4BF 100%)',
-                  borderRadius: 9999
-                }} />
-              </div>
-              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-accent-teal)' }}>
-                75%
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 8. Ongoing Live Spotlight Card */}
+      {/* 7. Ongoing Live Spotlight Card */}
       <div 
         onClick={onOpenLiveRoom}
         style={{
@@ -1139,14 +1087,16 @@ export function DashboardHome({
                 padding: '1px 6px',
                 borderRadius: 4
               }}>
-                HAPPENING NOW
+                {language === 'hi' ? 'अभी लाइव' : 'LIVE NOW'}
               </span>
               <span style={{ fontSize: 10, color: '#94A3B8' }}>
-                238 Students Live
+                238 {t.live.studentsWatching}
               </span>
             </div>
-            <h4 style={{ fontSize: 12, fontWeight: 700, color: '#FFFFFF' }}>
-              इतिहास: 50 VVI Objective MCQ Marathon (OMR Poll)
+            <h4 style={{ fontSize: 12, fontWeight: 700, color: '#FFFFFF', margin: 0 }}>
+              {language === 'hi' 
+                ? 'इतिहास: 50 VVI वस्तुनिष्ठ MCQ मैराथन (OMR टेस्ट)' 
+                : 'History: 50 VVI Objective MCQ Marathon (OMR Poll)'}
             </h4>
           </div>
         </div>
@@ -1168,12 +1118,12 @@ export function DashboardHome({
             gap: 4
           }}
         >
-          <span>Join</span>
+          <span>{t.live.joinRoomBtn}</span>
           <ArrowUpRight size={13} />
         </button>
       </div>
 
-      {/* 7. TOPPERS' HALL OF FAME (गौरव स्तम्भ) */}
+      {/* 8. TOPPERS' HALL OF FAME */}
       <div className="art-card" style={{
         padding: '16px',
         background: 'linear-gradient(135deg, rgba(15, 118, 110, 0.08) 0%, rgba(30, 41, 59, 0.04) 100%)',
@@ -1196,24 +1146,20 @@ export function DashboardHome({
             </div>
             <div>
               <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                Ideal Arts Toppers (कला गौरव)
+                {t.dashboard.toppersTitle}
               </h4>
               <p style={{ fontSize: 10, color: 'var(--text-secondary)', margin: 0 }}>
-                बिहार बोर्ड 12वीं कला संकाय 2024-2025
+                {t.dashboard.toppersSub}
               </p>
             </div>
           </div>
           <span style={{ fontSize: 10, fontWeight: 800, color: '#059669', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: 9999 }}>
-            98.4% Results
+            {t.dashboard.toppersBadge}
           </span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-          {[
-            { name: 'पूजा कुमारी', score: '458/500', rank: 'जिला प्रथम', badge: '🥇 91.6%' },
-            { name: 'अमित कुमार', score: '446/500', rank: 'Top 10 State', badge: '🥈 89.2%' },
-            { name: 'खुशी मिश्रा', score: '442/500', rank: 'इतिहास 96/100', badge: '🥉 88.4%' }
-          ].map((topper, idx) => (
+          {toppersList.map((topper, idx) => (
             <div key={idx} style={{
               background: 'var(--bg-surface)',
               border: '1px solid var(--border-subtle)',
@@ -1236,7 +1182,7 @@ export function DashboardHome({
         </div>
       </div>
 
-      {/* 8. FACULTY HELPLINE & DOUBT CLEARING */}
+      {/* 9. FACULTY HELPLINE */}
       <div style={{
         background: 'var(--bg-surface)',
         border: '1px solid var(--border-subtle)',
@@ -1263,10 +1209,10 @@ export function DashboardHome({
           </div>
           <div>
             <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-primary)' }}>
-              शिक्षक सहायता केंद्र (24x7 Faculty Helpline)
+              {t.dashboard.facultyTitle}
             </div>
             <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
-              किसी भी प्रश्न या नोट्स के लिए सीधे कॉल / WhatsApp करें
+              {t.dashboard.facultySub}
             </div>
           </div>
         </div>
@@ -1297,7 +1243,8 @@ export function DashboardHome({
         <QuickQuizModal 
           subjectId={quizSubject.id} 
           subjectName={quizSubject.name} 
-          onClose={() => setIsQuizOpen(false)} 
+          onClose={() => setIsQuizOpen(false)}
+          language={language}
         />
       )}
 

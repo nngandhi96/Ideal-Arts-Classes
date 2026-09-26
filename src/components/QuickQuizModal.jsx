@@ -83,7 +83,8 @@ const SAMPLE_QUIZ_QUESTIONS = {
   ]
 };
 
-export function QuickQuizModal({ subjectId = 'history', subjectName = 'इतिहास (History)', onClose }) {
+export function QuickQuizModal({ subjectId = 'history', subjectName, onClose, language = 'en' }) {
+  const cleanSubjectName = subjectName ? subjectName.replace(/\(.*?\)/g, '').trim() : (language === 'hi' ? 'इतिहास' : 'History');
   const questions = SAMPLE_QUIZ_QUESTIONS[subjectId] || SAMPLE_QUIZ_QUESTIONS['history'];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -177,7 +178,7 @@ export function QuickQuizModal({ subjectId = 'history', subjectName = 'इति
                 Bihar Board 2026 MCQ Marathon
               </div>
               <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>
-                {subjectName} Quiz
+                {cleanSubjectName} {language === 'hi' ? 'क्विज़' : 'Quiz'}
               </h3>
             </div>
           </div>
@@ -352,7 +353,7 @@ export function QuickQuizModal({ subjectId = 'history', subjectName = 'इति
                   cursor: selectedOption === null ? 'not-allowed' : 'pointer'
                 }}
               >
-                <span>{currentIndex < questions.length - 1 ? 'अगला प्रश्न' : 'परिणाम देखें'}</span>
+                <span>{currentIndex < questions.length - 1 ? (language === 'hi' ? 'अगला प्रश्न' : 'Next Question') : (language === 'hi' ? 'परिणाम देखें' : 'View Results')}</span>
                 <ChevronRight size={16} />
               </button>
             </div>
@@ -376,10 +377,16 @@ export function QuickQuizModal({ subjectId = 'history', subjectName = 'इति
 
             <div>
               <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>
-                {percentage >= 80 ? 'शानदार प्रदर्शन! 🌟' : percentage >= 60 ? 'बहुत अच्छा प्रयास! 👍' : 'और अभ्यास की आवश्यकता है 💪'}
+                {percentage >= 80 
+                  ? (language === 'hi' ? 'शानदार प्रदर्शन! 🌟' : 'Excellent Performance! 🌟') 
+                  : percentage >= 60 
+                  ? (language === 'hi' ? 'बहुत अच्छा प्रयास! 👍' : 'Good Effort! 👍') 
+                  : (language === 'hi' ? 'और अभ्यास की आवश्यकता है 💪' : 'Needs Practice 💪')}
               </h3>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                आपने {questions.length} में से {score} प्रश्न सही किए ({percentage}%)
+                {language === 'hi' 
+                  ? `आपने ${questions.length} में से ${score} प्रश्न सही किए (${percentage}%)` 
+                  : `You scored ${score} out of ${questions.length} questions correctly (${percentage}%)`}
               </p>
             </div>
 
@@ -393,17 +400,17 @@ export function QuickQuizModal({ subjectId = 'history', subjectName = 'इति
             }}>
               <div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: '#10B981' }}>{score}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>सही उत्तर</div>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{language === 'hi' ? 'सही उत्तर' : 'Correct'}</div>
               </div>
               <div style={{ width: 1, background: 'var(--border-subtle)' }} />
               <div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: '#EF4444' }}>{questions.length - score}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>गलत उत्तर</div>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{language === 'hi' ? 'गलत उत्तर' : 'Incorrect'}</div>
               </div>
               <div style={{ width: 1, background: 'var(--border-subtle)' }} />
               <div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-accent-teal)' }}>{percentage}%</div>
-                <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>सटीकता</div>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{language === 'hi' ? 'सटीकता' : 'Accuracy'}</div>
               </div>
             </div>
 
@@ -414,7 +421,7 @@ export function QuickQuizModal({ subjectId = 'history', subjectName = 'इति
                 style={{ flex: 1, padding: '10px', borderRadius: 10, fontSize: 13 }}
               >
                 <RotateCcw size={14} />
-                <span>पुनः प्रयास करें</span>
+                <span>{language === 'hi' ? 'पुनः प्रयास करें' : 'Try Again'}</span>
               </button>
 
               <button
@@ -422,7 +429,7 @@ export function QuickQuizModal({ subjectId = 'history', subjectName = 'इति
                 className="btn-primary"
                 style={{ flex: 1, padding: '10px', borderRadius: 10, fontSize: 13 }}
               >
-                <span>समाप्त</span>
+                <span>{language === 'hi' ? 'समाप्त' : 'Finish'}</span>
               </button>
             </div>
           </div>

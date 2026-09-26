@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Wifi, Battery, Smartphone, Moon, Sun, Sparkles, 
-  Layers, Maximize2, Minimize2, Check, RefreshCw 
+  Layers, Maximize2, Minimize2, Check, RefreshCw, Languages 
 } from 'lucide-react';
 
 import { SplashOnboarding } from './components/SplashOnboarding';
@@ -22,6 +22,23 @@ export default function App() {
   const [isLiveRoomOpen, setIsLiveRoomOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [selectedPdfResource, setSelectedPdfResource] = useState(null);
+
+  // App Language State: 'en' | 'hi'
+  const [language, setLanguage] = useState(() => {
+    try {
+      return localStorage.getItem('ideal_arts_lang') || 'en';
+    } catch {
+      return 'en';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('ideal_arts_lang', language);
+    } catch (e) {
+      console.error('Failed to save language preference:', e);
+    }
+  }, [language]);
 
   // Curriculum State (Classes 8th to 12th, Objective vs Subjective)
   const [selectedClass, setSelectedClass] = useState('12th'); // '12th' | '11th' | '10th' | '9th' | '8th'
@@ -86,11 +103,11 @@ export default function App() {
             border: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
             {[
-              { id: 'splash', label: 'Auth / Splash' },
-              { id: 'home', label: 'Home' },
-              { id: 'live', label: 'Live' },
-              { id: 'library', label: 'Library' },
-              { id: 'profile', label: 'Profile' }
+              { id: 'splash', label: language === 'hi' ? 'लॉगिन / भाषा' : 'Auth / Splash' },
+              { id: 'home', label: language === 'hi' ? 'होम' : 'Home' },
+              { id: 'live', label: language === 'hi' ? 'लाइव' : 'Live' },
+              { id: 'library', label: language === 'hi' ? 'लाइब्रेरी' : 'Library' },
+              { id: 'profile', label: language === 'hi' ? 'प्रोफ़ाइल' : 'Profile' }
             ].map(screen => (
               <button
                 key={screen.id}
@@ -119,6 +136,51 @@ export default function App() {
                 {screen.label}
               </button>
             ))}
+          </div>
+
+          {/* Quick Language Switcher Segment */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: 'rgba(255, 255, 255, 0.08)',
+            borderRadius: 9999,
+            padding: 2,
+            border: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
+            <button
+              onClick={() => setLanguage('en')}
+              style={{
+                border: 'none',
+                background: language === 'en' ? 'var(--color-accent-teal)' : 'transparent',
+                color: '#FFFFFF',
+                fontWeight: 700,
+                fontSize: 11,
+                padding: '3px 8px',
+                borderRadius: 9999,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Switch to English"
+            >
+              🇬🇧 EN
+            </button>
+            <button
+              onClick={() => setLanguage('hi')}
+              style={{
+                border: 'none',
+                background: language === 'hi' ? 'var(--color-accent-teal)' : 'transparent',
+                color: '#FFFFFF',
+                fontWeight: 700,
+                fontSize: 11,
+                padding: '3px 8px',
+                borderRadius: 9999,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="हिंदी में देखें"
+            >
+              🇮🇳 हिन्दी
+            </button>
           </div>
 
           {/* Theme Toggle Button */}
@@ -171,7 +233,9 @@ export default function App() {
             <SplashOnboarding 
               selectedClass={selectedClass}
               onSelectClass={setSelectedClass}
-              onFinishAuth={handleFinishAuth} 
+              onFinishAuth={handleFinishAuth}
+              language={language}
+              onSelectLanguage={setLanguage}
             />
           ) : (
             <>
@@ -184,6 +248,7 @@ export default function App() {
                   onNavigate={(tab) => setCurrentTab(tab)}
                   onOpenLiveRoom={() => setIsLiveRoomOpen(true)}
                   onOpenNotifications={() => setIsNotificationsOpen(true)}
+                  language={language}
                 />
               )}
 
@@ -194,6 +259,7 @@ export default function App() {
                   selectedMode={selectedMode}
                   onSelectMode={setSelectedMode}
                   onOpenLiveRoom={() => setIsLiveRoomOpen(true)}
+                  language={language}
                 />
               )}
 
@@ -204,6 +270,7 @@ export default function App() {
                   selectedMode={selectedMode}
                   onSelectMode={setSelectedMode}
                   onOpenPdfPreview={(item) => setSelectedPdfResource(item)}
+                  language={language}
                 />
               )}
 
@@ -214,6 +281,8 @@ export default function App() {
                   isDarkMode={isDarkMode}
                   onToggleTheme={handleToggleTheme}
                   onLogout={handleLogout}
+                  language={language}
+                  onSelectLanguage={setLanguage}
                 />
               )}
             </>
@@ -243,6 +312,7 @@ export default function App() {
           <BottomNavBar 
             currentTab={currentTab} 
             onSelectTab={(tab) => setCurrentTab(tab)} 
+            language={language}
           />
         )}
 

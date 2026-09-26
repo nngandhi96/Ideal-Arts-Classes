@@ -1,28 +1,56 @@
 import React, { useState } from 'react';
 import { 
   Sparkles, ArrowRight, ShieldCheck, Phone, CheckCircle2, 
-  Palette, Video, Award, ChevronRight, RefreshCw, BookOpen, Target, Landmark
+  ChevronRight, RefreshCw, BookOpen, Target, Landmark, Languages, Check
 } from 'lucide-react';
+import { translations } from '../data/translations';
 
-export function SplashOnboarding({ onFinishAuth }) {
-  const [step, setStep] = useState('splash'); // 'splash' | 'onboarding' | 'phone_auth' | 'otp_verify'
+export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLanguage }) {
+  // Steps: 'splash' | 'language_select' | 'onboarding' | 'phone_auth' | 'otp_verify'
+  const [step, setStep] = useState('splash');
   const [activeSlide, setActiveSlide] = useState(0);
   const [phoneNumber, setPhoneNumber] = useState('9876543210');
-  const [otp, setOtp] = useState(['5', '8', '2', '4', '1', '9']);
+  const [otp] = useState(['5', '8', '2', '4', '1', '9']);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  const slides = [
+  const t = translations[language] || translations.en;
+
+  const slidesEn = [
     {
-      title: "बिहार बोर्ड कला संकाय का नंबर #1 संस्थान",
-      subtitle: "कक्षा 11वीं एवं 12वीं के इतिहास, भूगोल, राजनीति विज्ञान, अर्थशास्त्र और सभी 8 विषयों की सम्पूर्ण तैयारी।",
+      title: "Bihar Board Arts Faculty #1 Premier Institute",
+      subtitle: "Comprehensive curriculum for Classes 11th & 12th covering History, Political Science, Geography, Economics and all 8 subjects.",
       tag: "Bihar Board Arts Special",
       icon: Landmark,
       color: "#0D9488"
     },
     {
-      title: "ऑब्जेक्टिव (50 Marks) & विषयनिष्ठ विशेष नोट्स",
-      subtitle: "100% सटीक VVI MCQs, OMR टेस्ट सीरीज़ और 2 व 5 अंकों वाले प्रश्नों के लिए हस्तलिखित उत्तर पुस्तिका।",
+      title: "Objective (50 Marks) & Subjective Specialized Notes",
+      subtitle: "100% verified VVI MCQs, OMR test series, and handwritten answer sheets for 2 and 5 marks questions.",
       tag: "50/50 Target Strategy",
+      icon: Target,
+      color: "#F59E0B"
+    },
+    {
+      title: "Live Lectures & Digital Study Library",
+      subtitle: "Live classes by master mentors, recorded video archives and downloadable high-quality PDF notes anytime, anywhere.",
+      tag: "Excellence in Arts",
+      icon: BookOpen,
+      color: "#10B981"
+    }
+  ];
+
+  const slidesHi = [
+    {
+      title: "बिहार बोर्ड कला संकाय का नंबर #1 संस्थान",
+      subtitle: "कक्षा 11वीं एवं 12वीं के इतिहास, भूगोल, राजनीति विज्ञान, अर्थशास्त्र और सभी 8 विषयों की सम्पूर्ण तैयारी।",
+      tag: "बिहार बोर्ड कला संकाय विशेष",
+      icon: Landmark,
+      color: "#0D9488"
+    },
+    {
+      title: "ऑब्जेक्टिव (50 अंक) & विषयनिष्ठ विशेष नोट्स",
+      subtitle: "100% सटीक VVI MCQs, OMR टेस्ट सीरीज़ और 2 व 5 अंकों वाले प्रश्नों के लिए हस्तलिखित उत्तर पुस्तिका।",
+      tag: "50/50 लक्ष्य रणनीति",
       icon: Target,
       color: "#F59E0B"
     },
@@ -35,13 +63,25 @@ export function SplashOnboarding({ onFinishAuth }) {
     }
   ];
 
-  // Auto transition from splash to onboarding if user clicks or waits
-  const handleStartOnboarding = () => {
-    setStep('onboarding');
+  const currentSlides = language === 'hi' ? slidesHi : slidesEn;
+
+  const handleStartFromSplash = () => {
+    // Go directly to language selection so student can select preferred language right at login!
+    setStep('language_select');
+  };
+
+  const handleLanguageChosen = (selectedLang) => {
+    if (onSelectLanguage) {
+      onSelectLanguage(selectedLang);
+    }
+  };
+
+  const handleProceedFromLanguage = () => {
+    setStep('phone_auth');
   };
 
   const handleNextSlide = () => {
-    if (activeSlide < slides.length - 1) {
+    if (activeSlide < currentSlides.length - 1) {
       setActiveSlide(prev => prev + 1);
     } else {
       setStep('phone_auth');
@@ -60,14 +100,14 @@ export function SplashOnboarding({ onFinishAuth }) {
     setTimeout(() => {
       setIsVerifying(false);
       onFinishAuth();
-    }, 900);
+    }, 800);
   };
 
-  /* ---------------- Splash Screen ---------------- */
+  /* ---------------- 1. Splash Screen ---------------- */
   if (step === 'splash') {
     return (
       <div 
-        onClick={handleStartOnboarding}
+        onClick={handleStartFromSplash}
         style={{
           minHeight: '100%',
           display: 'flex',
@@ -158,8 +198,8 @@ export function SplashOnboarding({ onFinishAuth }) {
             marginTop: 6
           }}>
             <Sparkles size={14} color="#2DD4BF" />
-            <span className="devanagari-tagline" style={{
-              fontSize: 15,
+            <span style={{
+              fontSize: 14,
               color: '#2DD4BF',
               fontWeight: 700
             }}>
@@ -171,7 +211,7 @@ export function SplashOnboarding({ onFinishAuth }) {
             fontSize: 13,
             color: '#94A3B8',
             marginTop: 14,
-            maxWidth: 260,
+            maxWidth: 280,
             lineHeight: 1.5
           }}>
             Premier Fine Arts Institute & Digital Academy
@@ -181,7 +221,7 @@ export function SplashOnboarding({ onFinishAuth }) {
         {/* Bottom CTA */}
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, zIndex: 2 }}>
           <button
-            onClick={handleStartOnboarding}
+            onClick={handleStartFromSplash}
             className="btn-primary"
             style={{
               width: '100%',
@@ -191,12 +231,12 @@ export function SplashOnboarding({ onFinishAuth }) {
               fontWeight: 700
             }}
           >
-            <span>Explore Academy</span>
+            <span>{t.auth.exploreBtn}</span>
             <ArrowRight size={18} />
           </button>
           
           <span style={{ fontSize: 11, color: '#64748B' }}>
-            Tap anywhere to proceed
+            {t.auth.tapToProceed}
           </span>
 
           <div style={{
@@ -218,9 +258,240 @@ export function SplashOnboarding({ onFinishAuth }) {
     );
   }
 
-  /* ---------------- Onboarding Carousel ---------------- */
+  /* ---------------- 2. Language Selection Screen (Requested by User) ---------------- */
+  if (step === 'language_select') {
+    return (
+      <div style={{
+        minHeight: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        padding: '28px 20px 24px',
+        background: 'var(--bg-app)'
+      }}>
+        <div>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <img src="/logo.svg" alt="logo" style={{ width: 36, height: 36 }} />
+              <div>
+                <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                  IDEAL ARTS
+                </h3>
+                <span style={{ fontSize: 11, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
+                  कला ज्ञानं जीवनम्
+                </span>
+              </div>
+            </div>
+
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '4px 10px',
+              borderRadius: 9999,
+              background: 'var(--color-accent-teal-tint)',
+              border: '1px solid rgba(13, 148, 136, 0.25)',
+              color: 'var(--color-accent-teal)',
+              fontSize: 11,
+              fontWeight: 700
+            }}>
+              <Languages size={13} />
+              <span>Step 1 of 2</span>
+            </div>
+          </div>
+
+          <h2 style={{ fontSize: 21, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6, lineHeight: 1.3 }}>
+            {t.auth.selectLanguageTitle}
+          </h2>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.5 }}>
+            {t.auth.selectLanguageSub}
+          </p>
+
+          {/* Interactive Language Cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            
+            {/* English Card */}
+            <div 
+              onClick={() => handleLanguageChosen('en')}
+              style={{
+                padding: '16px 18px',
+                borderRadius: 16,
+                border: language === 'en' 
+                  ? '2px solid var(--color-accent-teal)' 
+                  : '1.5px solid var(--border-subtle)',
+                background: language === 'en' 
+                  ? 'linear-gradient(135deg, rgba(13, 148, 136, 0.12) 0%, rgba(45, 212, 191, 0.05) 100%)' 
+                  : 'var(--bg-surface)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                transition: 'all 0.2s ease',
+                boxShadow: language === 'en' ? '0 6px 16px rgba(13, 148, 136, 0.15)' : 'var(--shadow-xs)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: language === 'en' ? 'var(--color-accent-teal)' : 'var(--bg-surface-subtle)',
+                  color: language === 'en' ? '#FFFFFF' : 'var(--text-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 22,
+                  fontWeight: 800
+                }}>
+                  🇬🇧
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <h4 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                      English
+                    </h4>
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      background: 'rgba(13, 148, 136, 0.15)',
+                      color: 'var(--color-accent-teal)',
+                      padding: '2px 8px',
+                      borderRadius: 9999
+                    }}>
+                      English Medium
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '4px 0 0', lineHeight: 1.3 }}>
+                    Display app menus, syllabus, and study notes in clean English.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                border: language === 'en' ? 'none' : '2px solid var(--border-subtle)',
+                background: language === 'en' ? 'var(--color-accent-teal)' : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#FFFFFF'
+              }}>
+                {language === 'en' && <Check size={14} strokeWidth={3} />}
+              </div>
+            </div>
+
+            {/* Hindi Card */}
+            <div 
+              onClick={() => handleLanguageChosen('hi')}
+              style={{
+                padding: '16px 18px',
+                borderRadius: 16,
+                border: language === 'hi' 
+                  ? '2px solid var(--color-accent-teal)' 
+                  : '1.5px solid var(--border-subtle)',
+                background: language === 'hi' 
+                  ? 'linear-gradient(135deg, rgba(13, 148, 136, 0.12) 0%, rgba(45, 212, 191, 0.05) 100%)' 
+                  : 'var(--bg-surface)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                transition: 'all 0.2s ease',
+                boxShadow: language === 'hi' ? '0 6px 16px rgba(13, 148, 136, 0.15)' : 'var(--shadow-xs)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: language === 'hi' ? 'var(--color-accent-teal)' : 'var(--bg-surface-subtle)',
+                  color: language === 'hi' ? '#FFFFFF' : 'var(--text-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 22,
+                  fontWeight: 800
+                }}>
+                  🇮🇳
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <h4 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                      हिन्दी (Hindi)
+                    </h4>
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      color: '#D97706',
+                      padding: '2px 8px',
+                      borderRadius: 9999
+                    }}>
+                      बिहार बोर्ड विशेष
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '4px 0 0', lineHeight: 1.3 }}>
+                    कला संकाय के सभी 8 विषयों के विस्तृत नोट्स एवं इंटरफ़ेस हिंदी में।
+                  </p>
+                </div>
+              </div>
+
+              <div style={{
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                border: language === 'hi' ? 'none' : '2px solid var(--border-subtle)',
+                background: language === 'hi' ? 'var(--color-accent-teal)' : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#FFFFFF'
+              }}>
+                {language === 'hi' && <Check size={14} strokeWidth={3} />}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Continue Button */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button
+            onClick={handleProceedFromLanguage}
+            className="btn-primary"
+            style={{ width: '100%', padding: '14px', borderRadius: 14, fontSize: 15, fontWeight: 700 }}
+          >
+            <span>{t.common.continue}</span>
+            <ArrowRight size={18} />
+          </button>
+          
+          <button
+            onClick={() => setStep('onboarding')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-secondary)',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              textAlign: 'center',
+              padding: '4px'
+            }}
+          >
+            {language === 'hi' ? 'अकादमी की विशेषताएं देखें' : 'View Academy Highlights'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ---------------- 3. Onboarding Carousel ---------------- */
   if (step === 'onboarding') {
-    const slide = slides[activeSlide];
+    const slide = currentSlides[activeSlide];
     const IconComponent = slide.icon;
 
     return (
@@ -232,25 +503,44 @@ export function SplashOnboarding({ onFinishAuth }) {
         padding: '24px 20px 24px',
         background: 'var(--bg-app)'
       }}>
-        {/* Header Skip */}
+        {/* Header Skip & Language Quick Switcher */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <img src="/logo.svg" alt="logo" style={{ width: 28, height: 28 }} />
             <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--text-primary)' }}>IDEAL ARTS</span>
           </div>
-          <button 
-            onClick={() => setStep('phone_auth')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--color-accent-teal)',
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: 'pointer'
-            }}
-          >
-            Skip
-          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={() => handleLanguageChosen(language === 'en' ? 'hi' : 'en')}
+              style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 9999,
+                padding: '3px 8px',
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--color-accent-teal)',
+                cursor: 'pointer'
+              }}
+            >
+              {language === 'en' ? '🇮🇳 हिन्दी' : '🇬🇧 English'}
+            </button>
+
+            <button 
+              onClick={() => setStep('phone_auth')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-tertiary)',
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: 'pointer'
+              }}
+            >
+              {t.auth.skip}
+            </button>
+          </div>
         </div>
 
         {/* Slide Visual Card */}
@@ -263,7 +553,7 @@ export function SplashOnboarding({ onFinishAuth }) {
         }}>
           <div style={{
             width: '100%',
-            height: 240,
+            height: 230,
             borderRadius: 20,
             background: `linear-gradient(135deg, ${slide.color}15 0%, ${slide.color}05 100%)`,
             border: `1.5px solid ${slide.color}30`,
@@ -272,12 +562,12 @@ export function SplashOnboarding({ onFinishAuth }) {
             alignItems: 'center',
             justifyContent: 'center',
             position: 'relative',
-            marginBottom: 28,
+            marginBottom: 24,
             overflow: 'hidden'
           }}>
             <div style={{
-              width: 90,
-              height: 90,
+              width: 86,
+              height: 86,
               borderRadius: '50%',
               background: slide.color,
               display: 'flex',
@@ -287,7 +577,7 @@ export function SplashOnboarding({ onFinishAuth }) {
               boxShadow: `0 12px 24px ${slide.color}40`,
               marginBottom: 12
             }}>
-              <IconComponent size={44} />
+              <IconComponent size={42} />
             </div>
 
             <div style={{
@@ -308,7 +598,7 @@ export function SplashOnboarding({ onFinishAuth }) {
           </div>
 
           <h2 style={{
-            fontSize: 20,
+            fontSize: 19,
             fontWeight: 800,
             color: 'var(--text-primary)',
             fontFamily: 'var(--font-sans)',
@@ -331,7 +621,7 @@ export function SplashOnboarding({ onFinishAuth }) {
         {/* Slide Indicators & Navigation */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
-            {slides.map((_, idx) => (
+            {currentSlides.map((_, idx) => (
               <div 
                 key={idx}
                 style={{
@@ -356,7 +646,7 @@ export function SplashOnboarding({ onFinishAuth }) {
               fontWeight: 700
             }}
           >
-            <span>{activeSlide === slides.length - 1 ? 'Get Started' : 'Next'}</span>
+            <span>{activeSlide === currentSlides.length - 1 ? t.auth.getStarted : t.auth.next}</span>
             <ArrowRight size={18} />
           </button>
         </div>
@@ -364,7 +654,7 @@ export function SplashOnboarding({ onFinishAuth }) {
     );
   }
 
-  /* ---------------- Phone Authentication ---------------- */
+  /* ---------------- 4. Phone Authentication Screen ---------------- */
   if (step === 'phone_auth') {
     return (
       <div style={{
@@ -376,29 +666,53 @@ export function SplashOnboarding({ onFinishAuth }) {
         background: 'var(--bg-app)'
       }}>
         <div>
-          {/* Brand header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-            <img src="/logo.svg" alt="logo" style={{ width: 44, height: 44 }} />
-            <div>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>
-                IDEAL ARTS CLASSES
-              </h3>
-              <span className="devanagari-tagline" style={{ fontSize: 12, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
-                कला ज्ञानं जीवनम्
-              </span>
+          {/* Brand header with Language Switcher */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <img src="/logo.svg" alt="logo" style={{ width: 40, height: 40 }} />
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                  IDEAL ARTS CLASSES
+                </h3>
+                <span style={{ fontSize: 12, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
+                  कला ज्ञानं जीवनम्
+                </span>
+              </div>
             </div>
+
+            {/* Quick Language Toggle Pill */}
+            <button
+              onClick={() => handleLanguageChosen(language === 'en' ? 'hi' : 'en')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                background: 'var(--bg-surface)',
+                border: '1.5px solid var(--border-subtle)',
+                borderRadius: 9999,
+                padding: '4px 10px',
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--color-accent-teal)',
+                cursor: 'pointer'
+              }}
+              title="Change Language"
+            >
+              <Languages size={13} />
+              <span>{language === 'en' ? 'हिन्दी' : 'EN'}</span>
+            </button>
           </div>
 
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>
-            Welcome to Art Portal
+          <h2 style={{ fontSize: 21, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>
+            {t.auth.title}
           </h2>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.5 }}>
-            Enter your registered mobile number to access live studios, study material & assignments.
+            {t.auth.subtitle}
           </p>
 
           <form onSubmit={handleSendOtp}>
             <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8, display: 'block' }}>
-              Student Mobile Number
+              {t.auth.mobileLabel}
             </label>
             <div style={{
               display: 'flex',
@@ -428,7 +742,7 @@ export function SplashOnboarding({ onFinishAuth }) {
                 maxLength="10"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-                placeholder="Enter 10-digit number"
+                placeholder={t.auth.mobilePlaceholder}
                 style={{
                   flex: 1,
                   border: 'none',
@@ -455,7 +769,7 @@ export function SplashOnboarding({ onFinishAuth }) {
             }}>
               <ShieldCheck size={18} color="var(--color-accent-teal)" style={{ flexShrink: 0, marginTop: 2 }} />
               <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                Instant OTP verification for enrolled students of Ideal Arts Academy.
+                {t.auth.otpHelper}
               </span>
             </div>
           </form>
@@ -467,18 +781,39 @@ export function SplashOnboarding({ onFinishAuth }) {
             className="btn-primary"
             style={{ width: '100%', padding: '14px', borderRadius: 14, fontSize: 15, fontWeight: 700 }}
           >
-            <span>Get OTP Verification Code</span>
+            <span>{t.auth.getOtpBtn}</span>
             <ChevronRight size={18} />
           </button>
+          
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              onClick={() => setStep('language_select')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--color-accent-teal)',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4
+              }}
+            >
+              <Languages size={13} />
+              <span>{t.auth.selectLanguageTitle} ({language === 'en' ? 'English' : 'हिन्दी'})</span>
+            </button>
+          </div>
+
           <span style={{ fontSize: 11, textAlign: 'center', color: 'var(--text-tertiary)' }}>
-            By continuing, you agree to Ideal Arts Terms of Service & Privacy Policy
+            {t.auth.termsNotice}
           </span>
         </div>
       </div>
     );
   }
 
-  /* ---------------- OTP Verification ---------------- */
+  /* ---------------- 5. OTP Verification Screen ---------------- */
   return (
     <div style={{
       minHeight: '100%',
@@ -504,14 +839,14 @@ export function SplashOnboarding({ onFinishAuth }) {
             gap: 4
           }}
         >
-          ← Change Number
+          ← {t.auth.changeNumber}
         </button>
 
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>
-          Verify OTP Code
+        <h2 style={{ fontSize: 21, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>
+          {t.auth.verifyTitle}
         </h2>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.5 }}>
-          Enter the 6-digit code sent to <strong style={{ color: 'var(--text-primary)' }}>+91 {phoneNumber}</strong>
+          {t.auth.verifySub} <strong style={{ color: 'var(--text-primary)' }}>+91 {phoneNumber}</strong>
         </p>
 
         {/* 6-box OTP Input Demo */}
@@ -549,7 +884,7 @@ export function SplashOnboarding({ onFinishAuth }) {
           borderRadius: 12
         }}>
           <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-            Didn't receive code?
+            {t.auth.didntReceive}
           </span>
           <button 
             style={{
@@ -565,7 +900,7 @@ export function SplashOnboarding({ onFinishAuth }) {
             }}
           >
             <RefreshCw size={12} />
-            Resend (00:45)
+            {t.auth.resendCode} (00:45)
           </button>
         </div>
       </div>
@@ -584,11 +919,11 @@ export function SplashOnboarding({ onFinishAuth }) {
         }}
       >
         {isVerifying ? (
-          <span>Verifying Credentials...</span>
+          <span>{t.auth.verifying}</span>
         ) : (
           <>
             <CheckCircle2 size={18} />
-            <span>Verify & Enter Academy</span>
+            <span>{t.auth.verifyBtn}</span>
           </>
         )}
       </button>

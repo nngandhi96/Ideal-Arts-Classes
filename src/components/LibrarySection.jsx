@@ -4,15 +4,26 @@ import {
   Bookmark, Check, Play, Filter, Clock, Eye, Sparkles,
   Target, PenTool, CheckCircle2, ChevronRight, Layers
 } from 'lucide-react';
-import { CLASSES_CONFIG, SUBJECTS_BY_CLASS, STUDY_MATERIALS } from '../data/curriculumData';
+import { 
+  CLASSES_CONFIG, 
+  SUBJECTS_BY_CLASS, 
+  STUDY_MATERIALS,
+  getSubjectDisplayName,
+  getClassDisplayName,
+  getClassStreamDisplayName
+} from '../data/curriculumData';
+import { translations } from '../data/translations';
 
 export function LibrarySection({ 
   selectedClass = '12th', 
   onSelectClass, 
   selectedMode = 'all', 
   onSelectMode, 
-  onOpenPdfPreview 
+  onOpenPdfPreview,
+  language = 'en'
 }) {
+  const t = translations[language] || translations.en;
+
   const [activeSubject, setActiveSubject] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [bookmarkedIds, setBookmarkedIds] = useState(new Set(['mat-12-hist-obj', 'mat-12-pol-subj']));
@@ -41,11 +52,6 @@ export function LibrarySection({
     });
   };
 
-  // Filter materials based on:
-  // 1. Class ID
-  // 2. Subject ID
-  // 3. Format type (Objective vs Subjective) if 11th or 12th
-  // 4. Search query
   const filteredMaterials = STUDY_MATERIALS.filter(item => {
     const matchesClass = item.classId === selectedClass;
     const matchesSubject = activeSubject === 'All' || item.subjectId === activeSubject;
@@ -70,18 +76,18 @@ export function LibrarySection({
       {/* 1. Header */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-          <span className="devanagari-tagline" style={{ fontSize: 11, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
-            कला ज्ञानं जीवनम्
+          <span style={{ fontSize: 11, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
+            {t.common.taglineMotto}
           </span>
           <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-            {filteredMaterials.length} Study Notes Found
+            {filteredMaterials.length} {t.library.notesFound}
           </span>
         </div>
-        <h2 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
-          Study & Notes Library
+        <h2 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', margin: 0 }}>
+          {t.library.headerTitle}
         </h2>
-        <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-          {currentClassInfo.hindiName} ({currentClassInfo.stream}) • सम्पूर्ण पाठ्यक्रम
+        <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '3px 0 0' }}>
+          {getClassDisplayName(currentClassInfo, language)} ({getClassStreamDisplayName(currentClassInfo, language)})
         </p>
       </div>
 
@@ -117,7 +123,7 @@ export function LibrarySection({
               transition: 'all 0.15s ease'
             }}
           >
-            {cls.name}
+            {getClassDisplayName(cls, language)}
           </button>
         ))}
       </div>
@@ -132,9 +138,9 @@ export function LibrarySection({
           border: '1px solid var(--border-subtle)'
         }}>
           {[
-            { id: 'all', label: 'All Materials (सभी)', icon: Layers },
-            { id: 'objective', label: '🎯 Objective (वस्तुनिष्ठ)', icon: Target },
-            { id: 'subjective', label: '📝 Subjective (विषयनिष्ठ)', icon: PenTool }
+            { id: 'all', label: t.dashboard.modeAll, icon: Layers },
+            { id: 'objective', label: `🎯 ${t.dashboard.modeObj}`, icon: Target },
+            { id: 'subjective', label: `📝 ${t.dashboard.modeSubj}`, icon: PenTool }
           ].map(tab => {
             const isSelected = selectedMode === tab.id;
             const Icon = tab.icon;
@@ -186,7 +192,7 @@ export function LibrarySection({
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={`Search ${currentClassInfo.name} subjects, topics, or MCQs...`}
+          placeholder={t.library.searchPlaceholder}
           style={{
             flex: 1,
             border: 'none',
@@ -201,12 +207,12 @@ export function LibrarySection({
             onClick={() => setSearchQuery('')}
             style={{ border: 'none', background: 'transparent', fontSize: 11, color: 'var(--text-tertiary)', cursor: 'pointer' }}
           >
-            Clear
+            {language === 'hi' ? 'साफ़ करें' : 'Clear'}
           </button>
         )}
       </div>
 
-      {/* 5. Subject Filter Chips */}
+      {/* 5. Subject Filter Chips (Clean single-language subject title, no stacked hindiName) */}
       <div style={{
         display: 'flex',
         gap: 6,
@@ -228,7 +234,7 @@ export function LibrarySection({
             cursor: 'pointer'
           }}
         >
-          All Subjects ({classSubjects.length})
+          {t.library.allSubjectsChip} ({classSubjects.length})
         </button>
 
         {classSubjects.map(sub => (
@@ -244,14 +250,10 @@ export function LibrarySection({
               color: activeSubject === sub.id ? sub.color : 'var(--text-secondary)',
               fontSize: 11,
               fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4
+              cursor: 'pointer'
             }}
           >
-            <span>{sub.name}</span>
-            <span style={{ fontSize: 10, opacity: 0.8 }}>({sub.hindiName})</span>
+            {getSubjectDisplayName(sub, language)}
           </button>
         ))}
       </div>
@@ -268,10 +270,7 @@ export function LibrarySection({
           }}>
             <BookOpen size={36} color="var(--text-tertiary)" style={{ margin: '0 auto 8px' }} />
             <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-              कोई सामग्री नहीं मिली
-            </p>
-            <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-              Try selecting "All Subjects" or change the Objective / Subjective filter.
+              {t.library.noNotesMsg}
             </p>
           </div>
         ) : (
@@ -310,7 +309,7 @@ export function LibrarySection({
                     </span>
 
                     <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>
-                      {item.subjectName}
+                      {getSubjectDisplayName(item.subjectName, language)}
                     </span>
                   </div>
 
@@ -355,7 +354,7 @@ export function LibrarySection({
                     {item.title}
                   </h4>
                   <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                    लेखक / शिक्षक: <strong style={{ color: 'var(--text-primary)' }}>{item.author}</strong>
+                    {language === 'hi' ? 'शिक्षक / लेखक:' : 'Faculty / Author:'} <strong style={{ color: 'var(--text-primary)' }}>{item.author}</strong>
                   </p>
                 </div>
 
@@ -378,7 +377,7 @@ export function LibrarySection({
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
-                    <span>PDF पढ़ें</span>
+                    <span>{t.library.readPdfBtn}</span>
                     <ChevronRight size={13} />
                   </div>
                 </div>

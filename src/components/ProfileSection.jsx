@@ -2,17 +2,28 @@ import React, { useState } from 'react';
 import { 
   User, Moon, Sun, Download, HelpCircle, LogOut, 
   Award, Shield, FileCheck, PhoneCall, ChevronRight, 
-  HardDrive, CheckCircle2, Sparkles, ExternalLink 
+  HardDrive, CheckCircle2, Sparkles, ExternalLink, Languages
 } from 'lucide-react';
-import { CLASSES_CONFIG, SUBJECTS_BY_CLASS } from '../data/curriculumData';
+import { 
+  CLASSES_CONFIG, 
+  SUBJECTS_BY_CLASS,
+  getClassDisplayName,
+  getClassStreamDisplayName,
+  getSubjectDisplayName
+} from '../data/curriculumData';
+import { translations } from '../data/translations';
 
 export function ProfileSection({ 
   selectedClass = '12th', 
   onSelectClass, 
   isDarkMode, 
   onToggleTheme, 
-  onLogout 
+  onLogout,
+  language = 'en',
+  onSelectLanguage
 }) {
+  const t = translations[language] || translations.en;
+
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [showReceiptToast, setShowReceiptToast] = useState(false);
@@ -77,13 +88,13 @@ export function ProfileSection({
 
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-              <h3 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', fontFamily: 'var(--font-sans)' }}>
+              <h3 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', fontFamily: 'var(--font-sans)', margin: 0 }}>
                 Aarav Sharma
               </h3>
               <Sparkles size={14} color="#2DD4BF" />
             </div>
-            <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 6 }}>
-              Roll No: <strong style={{ color: '#E2E8F0' }}>IAC-2026-088</strong>
+            <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 6, margin: '2px 0 6px' }}>
+              {t.profile.rollLabel}: <strong style={{ color: '#E2E8F0' }}>IAC-2026-088</strong>
             </p>
             <div style={{
               display: 'inline-flex',
@@ -98,7 +109,7 @@ export function ProfileSection({
               color: '#2DD4BF'
             }}>
               <Award size={12} />
-              <span>{currentClassInfo.name} • {currentClassInfo.hindiName} ({currentClassInfo.stream})</span>
+              <span>{getClassDisplayName(currentClassInfo, language)} • {getClassStreamDisplayName(currentClassInfo, language)}</span>
             </div>
           </div>
         </div>
@@ -115,15 +126,15 @@ export function ProfileSection({
         }}>
           <div>
             <span style={{ fontSize: 16, fontWeight: 800, color: '#2DD4BF' }}>96%</span>
-            <p style={{ fontSize: 10, color: '#94A3B8' }}>Attendance</p>
+            <p style={{ fontSize: 10, color: '#94A3B8', margin: '2px 0 0' }}>{t.profile.attendance}</p>
           </div>
           <div>
             <span style={{ fontSize: 16, fontWeight: 800, color: '#10B981' }}>88%</span>
-            <p style={{ fontSize: 10, color: '#94A3B8' }}>Objective Tests</p>
+            <p style={{ fontSize: 10, color: '#94A3B8', margin: '2px 0 0' }}>{t.profile.testsCompleted}</p>
           </div>
           <div>
-            <span style={{ fontSize: 16, fontWeight: 800, color: '#FF6B4A' }}>12/15</span>
-            <p style={{ fontSize: 10, color: '#94A3B8' }}>Subjective Q&A</p>
+            <span style={{ fontSize: 16, fontWeight: 800, color: '#FF6B4A' }}>Top 5%</span>
+            <p style={{ fontSize: 10, color: '#94A3B8', margin: '2px 0 0' }}>{t.profile.boardRank}</p>
           </div>
         </div>
       </div>
@@ -132,10 +143,10 @@ export function ProfileSection({
       <div className="art-card" style={{ padding: '12px 14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
-            Switch Enrolled Class / कक्षा बदलें
+            {language === 'hi' ? 'नामांकित कक्षा बदलें' : 'Switch Enrolled Class'}
           </span>
           <span style={{ fontSize: 11, color: 'var(--color-accent-teal)', fontWeight: 600 }}>
-            Active: {currentClassInfo.name}
+            {language === 'hi' ? 'सक्रिय:' : 'Active:'} {getClassDisplayName(currentClassInfo, language)}
           </span>
         </div>
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
@@ -144,33 +155,33 @@ export function ProfileSection({
               key={cls.id}
               onClick={() => onSelectClass && onSelectClass(cls.id)}
               style={{
-                padding: '6px 10px',
+                padding: '6px 12px',
                 borderRadius: 8,
                 border: selectedClass === cls.id ? '1.5px solid var(--color-accent-teal)' : '1px solid var(--border-subtle)',
                 background: selectedClass === cls.id ? 'var(--color-accent-teal)' : 'var(--bg-surface)',
                 color: selectedClass === cls.id ? '#FFFFFF' : 'var(--text-secondary)',
                 fontSize: 11,
                 fontWeight: 700,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
               }}
             >
-              {cls.name}
+              {getClassDisplayName(cls, language)}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Enrolled Subjects List */}
+      {/* Enrolled Subjects Tag Cloud (Clean single language, no dual text) */}
       <div className="art-card" style={{ padding: '14px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>
-            Enrolled Subjects ({currentSubjects.length})
+          <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+            {t.profile.enrolledSubjects} ({currentSubjects.length})
           </h4>
-          <span style={{ fontSize: 10, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
-            {currentClassInfo.stream}
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+            {getClassStreamDisplayName(currentClassInfo, language)}
           </span>
         </div>
-
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {currentSubjects.map(sub => (
             <span
@@ -180,12 +191,12 @@ export function ProfileSection({
                 fontWeight: 700,
                 color: sub.color,
                 background: sub.bgLight,
-                padding: '4px 10px',
+                padding: '5px 10px',
                 borderRadius: 8,
                 border: `1px solid ${sub.color}25`
               }}
             >
-              {sub.name} ({sub.hindiName})
+              {getSubjectDisplayName(sub, language)}
             </span>
           ))}
         </div>
@@ -200,23 +211,22 @@ export function ProfileSection({
               height: 32,
               borderRadius: 8,
               background: 'var(--color-accent-teal-tint)',
+              color: 'var(--color-accent-teal)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--color-accent-teal)'
+              justifyContent: 'center'
             }}>
               <HardDrive size={16} />
             </div>
             <div>
-              <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-                Offline Downloads Storage
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                {language === 'hi' ? 'ऑफलाइन अध्ययन सामग्री' : 'Offline Downloaded Notes'}
               </h4>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                1.4 GB used of 32 GB allocated
+              <p style={{ fontSize: 10, color: 'var(--text-secondary)', margin: '1px 0 0' }}>
+                42.8 MB / 1.0 GB {language === 'hi' ? 'उपयोग हुआ' : 'Used'}
               </p>
             </div>
           </div>
-
           <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-accent-teal)' }}>
             4.3%
           </span>
@@ -237,6 +247,79 @@ export function ProfileSection({
       {/* App & Academic Settings List */}
       <div className="art-card" style={{ padding: '6px 0', overflow: 'hidden' }}>
         
+        {/* NEW: Language Switcher Setting Item */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 16px',
+          borderBottom: '1px solid var(--border-subtle)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 34,
+              height: 34,
+              borderRadius: 8,
+              background: 'rgba(13, 148, 136, 0.1)',
+              color: 'var(--color-accent-teal)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Languages size={18} />
+            </div>
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                {t.profile.languageLabel}
+              </h4>
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+                {t.profile.languageDesc}
+              </p>
+            </div>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            background: 'var(--bg-surface-subtle)',
+            padding: 2,
+            borderRadius: 8,
+            border: '1px solid var(--border-subtle)'
+          }}>
+            <button
+              onClick={() => onSelectLanguage && onSelectLanguage('en')}
+              style={{
+                border: 'none',
+                background: language === 'en' ? 'var(--color-accent-teal)' : 'transparent',
+                color: language === 'en' ? '#FFFFFF' : 'var(--text-secondary)',
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '4px 10px',
+                borderRadius: 6,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              🇬🇧 EN
+            </button>
+            <button
+              onClick={() => onSelectLanguage && onSelectLanguage('hi')}
+              style={{
+                border: 'none',
+                background: language === 'hi' ? 'var(--color-accent-teal)' : 'transparent',
+                color: language === 'hi' ? '#FFFFFF' : 'var(--text-secondary)',
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '4px 10px',
+                borderRadius: 6,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              🇮🇳 हिन्दी
+            </button>
+          </div>
+        </div>
+
         {/* Dark/Light Theme Toggle */}
         <div 
           onClick={onToggleTheme}
@@ -263,11 +346,11 @@ export function ProfileSection({
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </div>
             <div>
-              <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                App Theme
+              <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                {t.profile.darkModeLabel}
               </h4>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                Currently in {isDarkMode ? 'Dark Mode' : 'Light Mode'}
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+                {t.profile.darkModeDesc}
               </p>
             </div>
           </div>
@@ -319,11 +402,11 @@ export function ProfileSection({
               <FileCheck size={18} />
             </div>
             <div>
-              <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                Tuition Fee Receipt 2026
+              <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                {language === 'hi' ? 'नामांकन शुल्क रसीद 2026' : 'Tuition Fee Receipt 2026'}
               </h4>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                Batch 2025-27 • Paid & Verified
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+                {language === 'hi' ? 'सत्र 2025-27 • सत्यापित एवं सहेजा गया' : 'Batch 2025-27 • Paid & Verified'}
               </p>
             </div>
           </div>
@@ -356,11 +439,11 @@ export function ProfileSection({
               <PhoneCall size={18} />
             </div>
             <div>
-              <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                Faculty Helpline & Support
+              <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                {t.profile.helpSupport}
               </h4>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                Direct WhatsApp & Academic Advisors
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+                {t.profile.helpDesc}
               </p>
             </div>
           </div>
@@ -392,11 +475,11 @@ export function ProfileSection({
               <LogOut size={18} />
             </div>
             <div>
-              <h4 style={{ fontSize: 13, fontWeight: 600, color: '#EF4444' }}>
-                Logout
+              <h4 style={{ fontSize: 13, fontWeight: 600, color: '#EF4444', margin: 0 }}>
+                {t.profile.logoutBtn}
               </h4>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                Sign out of student account
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+                {language === 'hi' ? 'सत्र समाप्त करें' : 'Sign out of current device session'}
               </p>
             </div>
           </div>
@@ -407,11 +490,11 @@ export function ProfileSection({
 
       {/* Institutional Accreditation Footer */}
       <div style={{ textAlign: 'center', padding: '10px 0' }}>
-        <p className="devanagari-tagline" style={{ fontSize: 13, color: 'var(--color-accent-teal)', fontWeight: 700 }}>
-          कला ज्ञानं जीवनम्
+        <p style={{ fontSize: 13, color: 'var(--color-accent-teal)', fontWeight: 700, margin: 0 }}>
+          {t.common.taglineMotto}
         </p>
         <p style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 4 }}>
-          Ideal Arts Classes v2.4.0 (Official Build) • Reg. No. IAC-MH-401
+          Ideal Arts Classes v2.5.0 • Reg. No. IAC-MH-401
         </p>
       </div>
 
@@ -451,70 +534,76 @@ export function ProfileSection({
           alignItems: 'flex-end',
           justifyContent: 'center'
         }}>
-          <div className="art-card animate-slide-up" style={{
+          <div style={{
             width: '100%',
-            maxHeight: '80%',
-            borderRadius: '24px 24px 0 0',
-            padding: '20px',
-            background: 'var(--bg-surface)'
+            background: 'var(--bg-surface)',
+            borderRadius: '20px 20px 0 0',
+            padding: '24px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+            boxShadow: 'var(--shadow-lg)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>
-                Academic Support Desk
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                {t.profile.helpSupport}
               </h3>
               <button 
                 onClick={() => setShowSupportModal(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 18 }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: 16, cursor: 'pointer' }}
               >
                 ✕
               </button>
             </div>
 
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 16 }}>
-              Have questions regarding live streams, easel submissions, or certification? Reach our dedicated faculty:
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>
+              {language === 'hi' 
+                ? 'कला संकाय से जुड़े किसी भी प्रश्न या सहायता के लिए हमारे वरिष्ठ शिक्षकों से संपर्क करें।' 
+                : 'Connect directly with senior faculty and admission coordinators for guidance.'}
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <a
                 href="https://wa.me/919876543210"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
+                  gap: 12,
                   padding: '12px 14px',
+                  background: 'rgba(37, 211, 102, 0.1)',
+                  border: '1px solid rgba(37, 211, 102, 0.25)',
                   borderRadius: 12,
-                  background: 'rgba(16, 185, 129, 0.1)',
-                  border: '1px solid rgba(16, 185, 129, 0.3)',
-                  color: '#10B981',
                   textDecoration: 'none',
-                  fontWeight: 700,
-                  fontSize: 13
+                  color: 'var(--text-primary)'
                 }}
               >
-                <span>💬 WhatsApp Student Desk (+91 98765 43210)</span>
-                <ExternalLink size={14} />
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  background: '#25D366',
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <PhoneCall size={18} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>WhatsApp Faculty Helpdesk</div>
+                  <div style={{ fontSize: 11, color: '#059669' }}>+91 98765 43210 (24x7)</div>
+                </div>
               </a>
-
-              <div style={{
-                padding: '12px 14px',
-                borderRadius: 12,
-                background: 'var(--bg-surface-subtle)',
-                border: '1px solid var(--border-subtle)',
-                fontSize: 12,
-                color: 'var(--text-secondary)'
-              }}>
-                <strong style={{ color: 'var(--text-primary)' }}>Office Hours:</strong> Monday - Saturday (09:00 AM - 07:00 PM IST)
-              </div>
             </div>
 
             <button
               onClick={() => setShowSupportModal(false)}
               className="btn-primary"
-              style={{ width: '100%', padding: '12px', borderRadius: 12 }}
+              style={{ width: '100%', padding: '12px', borderRadius: 12, fontSize: 13 }}
             >
-              Close Support
+              {t.common.cancel}
             </button>
           </div>
         </div>
@@ -531,19 +620,20 @@ export function ProfileSection({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 20
+          padding: 24
         }}>
-          <div className="art-card animate-fade-in" style={{
+          <div style={{
             width: '100%',
             maxWidth: 320,
-            borderRadius: 18,
+            background: 'var(--bg-surface)',
+            borderRadius: 16,
             padding: 20,
             textAlign: 'center',
-            background: 'var(--bg-surface)'
+            boxShadow: 'var(--shadow-lg)'
           }}>
             <div style={{
-              width: 48,
-              height: 48,
+              width: 50,
+              height: 50,
               borderRadius: '50%',
               background: 'rgba(239, 68, 68, 0.1)',
               color: '#EF4444',
@@ -556,35 +646,50 @@ export function ProfileSection({
             </div>
 
             <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>
-              Sign Out of Ideal Arts?
+              {language === 'hi' ? 'लॉगआउट की पुष्टि करें' : 'Confirm Logout'}
             </h3>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 18 }}>
-              You will need to verify your phone number via OTP when you log back in.
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 20 }}>
+              {language === 'hi' 
+                ? 'क्या आप वास्तव में अपने छात्र खाते से लॉगआउट करना चाहते हैं?' 
+                : 'Are you sure you want to sign out from your student account on this device?'}
             </p>
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="btn-secondary"
-                style={{ flex: 1, padding: '10px' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => { setShowLogoutModal(false); onLogout(); }}
                 style={{
                   flex: 1,
                   padding: '10px',
-                  borderRadius: 12,
+                  borderRadius: 10,
+                  border: '1px solid var(--border-subtle)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: 'pointer'
+                }}
+              >
+                {t.common.cancel}
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowLogoutModal(false);
+                  if (onLogout) onLogout();
+                }}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: 10,
+                  border: 'none',
                   background: '#EF4444',
                   color: '#FFFFFF',
-                  border: 'none',
                   fontWeight: 700,
                   fontSize: 13,
                   cursor: 'pointer'
                 }}
               >
-                Sign Out
+                {t.profile.logoutBtn}
               </button>
             </div>
           </div>
