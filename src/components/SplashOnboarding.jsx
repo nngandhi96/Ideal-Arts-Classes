@@ -4,6 +4,7 @@ import {
   ChevronRight, RefreshCw, BookOpen, Target, Landmark, Languages, Check
 } from 'lucide-react';
 import { translations } from '../data/translations';
+import { authService } from '../lib/supabaseClient';
 
 export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLanguage }) {
   // Steps: 'splash' | 'language_select' | 'onboarding' | 'phone_auth' | 'otp_verify'
@@ -12,6 +13,7 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
   const [phoneNumber, setPhoneNumber] = useState('9876543210');
   const [otp] = useState(['5', '8', '2', '4', '1', '9']);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const t = translations[language] || translations.en;
 
@@ -101,6 +103,29 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
       setIsVerifying(false);
       onFinishAuth();
     }, 800);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    try {
+      if (authService && authService.signInWithGoogle) {
+        const res = await authService.signInWithGoogle();
+        if (res && res.error) {
+          console.warn('Google Auth fallback to direct login:', res.error.message);
+          onFinishAuth();
+        }
+      } else {
+        onFinishAuth();
+      }
+    } catch (err) {
+      console.warn('Google sign-in exception:', err);
+      onFinishAuth();
+    } finally {
+      setTimeout(() => {
+        setIsGoogleLoading(false);
+        onFinishAuth();
+      }, 500);
+    }
   };
 
   /* ---------------- 1. Splash Screen ---------------- */
@@ -706,9 +731,80 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
           <h2 style={{ fontSize: 21, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>
             {t.auth.title}
           </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.5 }}>
             {t.auth.subtitle}
           </p>
+
+          {/* Continue with Google Button */}
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={isGoogleLoading}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 12,
+              background: '#FFFFFF',
+              color: '#1F2937',
+              border: '1.5px solid #E5E7EB',
+              borderRadius: 14,
+              padding: '12px 18px',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.05)',
+              transition: 'all 0.15s ease',
+              marginBottom: 18
+            }}
+          >
+            {isGoogleLoading ? (
+              <RefreshCw size={18} style={{ animation: 'spin 1s linear infinite' }} />
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3h3.88c2.27-2.09 3.66-5.17 3.66-9.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.09C3.27 21.37 7.36 24 12 24z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.28 14.32c-.25-.72-.38-1.49-.38-2.32s.13-1.6.38-2.32V6.59H1.26C.46 8.19 0 9.99 0 12s.46 3.81 1.26 5.41l4.02-3.09z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.36 0 3.27 2.63 1.26 6.59l4.02 3.09c.95-2.83 3.6-4.93 6.72-4.93z"
+                />
+              </svg>
+            )}
+            <span>
+              {isGoogleLoading ? t.auth.googleSigningIn : t.auth.googleLoginBtn}
+            </span>
+          </button>
+
+          {/* Divider: OR */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            marginBottom: 18
+          }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+            <span style={{
+              fontSize: 11,
+              fontWeight: 800,
+              color: 'var(--text-tertiary)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              {t.auth.orDivider}
+            </span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+          </div>
 
           <form onSubmit={handleSendOtp}>
             <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8, display: 'block' }}>

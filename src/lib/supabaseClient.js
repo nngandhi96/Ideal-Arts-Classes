@@ -69,6 +69,16 @@ export const authService = {
     return await supabase.auth.signInWithPassword({ email, password });
   },
 
+  async signInWithGoogle() {
+    if (!supabase) return { error: { message: 'Supabase is not configured' } };
+    return await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+  },
+
   async signOut() {
     if (!supabase) return { error: null };
     return await supabase.auth.signOut();

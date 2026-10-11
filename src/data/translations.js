@@ -61,6 +61,9 @@ export const translations = {
       skip: 'Skip',
       next: 'Next',
       getStarted: 'Get Started',
+      googleLoginBtn: 'Continue with Google',
+      googleSigningIn: 'Signing in with Google...',
+      orDivider: 'OR',
     },
     dashboard: {
       greeting: 'Welcome 🙏',
@@ -251,6 +254,9 @@ export const translations = {
       skip: 'छोड़ें',
       next: 'आगे',
       getStarted: 'शुरू करें',
+      googleLoginBtn: 'Google से लॉगिन करें',
+      googleSigningIn: 'Google से कनेक्ट हो रहा है...',
+      orDivider: 'अथवा',
     },
     dashboard: {
       greeting: 'नमस्ते 🙏',
