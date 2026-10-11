@@ -293,6 +293,7 @@ export default function App() {
                   language={language}
                   onSelectLanguage={setLanguage}
                   onOpenAdmin={() => setCurrentTab('admin')}
+                  onBack={() => setCurrentTab('home')}
                 />
               )}
 

@@ -243,7 +243,27 @@ export function DashboardHome({
       
       {/* 1. Header with Student Greeting & Live Sync indicator */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div 
+          onClick={() => onNavigate && onNavigate('profile')}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 12,
+            cursor: 'pointer',
+            padding: '2px 6px',
+            marginLeft: -6,
+            borderRadius: 12,
+            transition: 'background 0.15s ease'
+          }}
+          title={language === 'hi' ? 'प्रोफ़ाइल देखें' : 'View Profile'}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              onNavigate && onNavigate('profile');
+            }
+          }}
+        >
           {/* Avatar with Status */}
           <div style={{ position: 'relative' }}>
             <div style={{

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { 
   User, Moon, Sun, Download, HelpCircle, LogOut, 
-  Award, Shield, FileCheck, PhoneCall, ChevronRight, 
-  HardDrive, CheckCircle2, Sparkles, ExternalLink, Languages
+  Award, Shield, ShieldCheck, FileCheck, PhoneCall, ChevronRight, 
+  HardDrive, CheckCircle2, Sparkles, ExternalLink, Languages, ArrowLeft
 } from 'lucide-react';
 import { 
   CLASSES_CONFIG, 
@@ -21,7 +21,8 @@ export function ProfileSection({
   onLogout,
   language = 'en',
   onSelectLanguage,
-  onOpenAdmin
+  onOpenAdmin,
+  onBack
 }) {
   const t = translations[language] || translations.en;
 
@@ -40,6 +41,37 @@ export function ProfileSection({
   return (
     <div style={{ padding: '16px 16px 80px', display: 'flex', flexDirection: 'column', gap: 16 }}>
       
+      {/* Top Header Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {onBack && (
+            <button
+              onClick={onBack}
+              style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 10,
+                width: 36,
+                height: 36,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                boxShadow: 'var(--shadow-xs)'
+              }}
+              title={language === 'hi' ? 'होम पर वापस जाएं' : 'Back to Home'}
+              aria-label="Back"
+            >
+              <ArrowLeft size={18} />
+            </button>
+          )}
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
+            {t.profile.headerTitle}
+          </h2>
+        </div>
+      </div>
+
       {/* Profile Header Card */}
       <div className="art-card" style={{
         padding: '18px 16px',
