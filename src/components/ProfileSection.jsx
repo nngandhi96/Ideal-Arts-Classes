@@ -70,6 +70,29 @@ export function ProfileSection({
             {t.profile.headerTitle}
           </h2>
         </div>
+
+        {/* Quick Top Logout Button */}
+        <button
+          onClick={() => setShowLogoutModal(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.25)',
+            color: '#EF4444',
+            padding: '6px 12px',
+            borderRadius: 10,
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease'
+          }}
+          title={language === 'hi' ? 'लॉगआउट करें' : 'Logout'}
+        >
+          <LogOut size={14} />
+          <span>{language === 'hi' ? 'लॉगआउट' : 'Logout'}</span>
+        </button>
       </div>
 
       {/* Profile Header Card */}
