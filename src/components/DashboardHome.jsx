@@ -6,7 +6,7 @@ import {
   Globe2, Globe, Brain, Feather, Home, Music, Calculator, 
   Atom, Scroll, Languages, CheckCircle2, Target, PenTool,
   Layers, Filter, Database, Check, Search, MessageCircle, 
-  PhoneCall, Zap, X, Trophy
+  PhoneCall, Zap, X, Trophy, Headphones
 } from 'lucide-react';
 import { 
   CLASSES_CONFIG, 
@@ -18,6 +18,11 @@ import {
 import { translations } from '../data/translations';
 import { isSupabaseConfigured, announcementService, liveClassService } from '../lib/supabaseClient';
 import { QuickQuizModal } from './QuickQuizModal';
+import { AiDoubtGuruModal } from './AiDoubtGuruModal';
+import { StreakModal } from './StreakModal';
+import { TopperCopyModal } from './TopperCopyModal';
+import { AudioPodsModal } from './AudioPodsModal';
+import { FlashcardsModal } from './FlashcardsModal';
 
 // Icon resolver helper
 const getSubjectIcon = (iconName) => {
@@ -85,6 +90,13 @@ export function DashboardHome({
     id: 'history', 
     name: language === 'hi' ? 'इतिहास' : 'History' 
   });
+
+  // Unique EdTech Suite States
+  const [isAiDoubtOpen, setIsAiDoubtOpen] = useState(false);
+  const [isStreakOpen, setIsStreakOpen] = useState(false);
+  const [isTopperCopyOpen, setIsTopperCopyOpen] = useState(false);
+  const [isAudioPodsOpen, setIsAudioPodsOpen] = useState(false);
+  const [isFlashcardsOpen, setIsFlashcardsOpen] = useState(false);
 
   const filteredSubjects = currentSubjects.filter(sub => {
     if (!searchQuery.trim()) return true;
@@ -462,7 +474,23 @@ export function DashboardHome({
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#F59E0B', fontSize: 12, fontWeight: 700 }}>
+          <div 
+            onClick={() => setIsStreakOpen(true)}
+            title={language === 'hi' ? 'दैनिक स्ट्रीक व रिवॉर्ड्स देखें' : 'View daily streak & rewards'}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 4, 
+              color: '#F59E0B', 
+              fontSize: 12, 
+              fontWeight: 700,
+              cursor: 'pointer',
+              background: 'rgba(245, 158, 11, 0.15)',
+              padding: '3px 8px',
+              borderRadius: 9999,
+              transition: 'background 0.2s'
+            }}
+          >
             <Flame size={15} fill="#F59E0B" />
             <span>{t.dashboard.streakText}</span>
           </div>
@@ -476,6 +504,97 @@ export function DashboardHome({
         <div style={{ height: 6, background: 'rgba(255, 255, 255, 0.15)', borderRadius: 9999, overflow: 'hidden' }}>
           <div style={{ width: '68%', height: '100%', background: 'linear-gradient(90deg, #0D9488 0%, #2DD4BF 100%)', borderRadius: 9999 }} />
         </div>
+      </div>
+
+      {/* 2c-ii. Signature EdTech Super Hub (AI Guru, Topper Copy, Audio Pods, Flashcards) */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 8
+      }}>
+        {[
+          {
+            id: 'ai-doubt',
+            title: language === 'hi' ? 'AI गुरुजी' : 'AI Doubt',
+            sub: language === 'hi' ? '24x7 समाधान' : 'Instant Q&A',
+            icon: Sparkles,
+            color: '#0D9488',
+            bg: 'rgba(13, 148, 136, 0.08)',
+            border: 'rgba(13, 148, 136, 0.25)',
+            onClick: () => setIsAiDoubtOpen(true)
+          },
+          {
+            id: 'topper-copy',
+            title: language === 'hi' ? 'टॉपर कॉपी' : 'Topper Copy',
+            sub: language === 'hi' ? 'मॉडल शीट' : 'Model Sheet',
+            icon: Trophy,
+            color: '#D97706',
+            bg: 'rgba(217, 119, 6, 0.08)',
+            border: 'rgba(217, 119, 6, 0.25)',
+            onClick: () => setIsTopperCopyOpen(true)
+          },
+          {
+            id: 'audio-pods',
+            title: language === 'hi' ? '5-Min ऑडियो' : 'Audio Pods',
+            sub: language === 'hi' ? 'रिवीजन' : '5-Min Audio',
+            icon: Headphones,
+            color: '#7C3AED',
+            bg: 'rgba(124, 58, 237, 0.08)',
+            border: 'rgba(124, 58, 237, 0.25)',
+            onClick: () => setIsAudioPodsOpen(true)
+          },
+          {
+            id: 'flashcards',
+            title: language === 'hi' ? 'फ्लैशकार्ड्स' : 'Flashcards',
+            sub: language === 'hi' ? '1-स्वाइप' : 'Rapid Cards',
+            icon: Layers,
+            color: '#E11D48',
+            bg: 'rgba(225, 29, 72, 0.08)',
+            border: 'rgba(225, 29, 72, 0.25)',
+            onClick: () => setIsFlashcardsOpen(true)
+          }
+        ].map(hub => {
+          const HubIcon = hub.icon;
+          return (
+            <button
+              key={hub.id}
+              onClick={hub.onClick}
+              style={{
+                background: 'var(--bg-surface)',
+                border: `1.5px solid ${hub.border}`,
+                borderRadius: 14,
+                padding: '10px 4px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                cursor: 'pointer',
+                boxShadow: 'var(--shadow-xs)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                background: hub.bg,
+                color: hub.color,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 4
+              }}>
+                <HubIcon size={16} />
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                {hub.title}
+              </span>
+              <span style={{ fontSize: 9.5, color: 'var(--text-secondary)', marginTop: 2 }}>
+                {hub.sub}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* 2d. Quick Practice Quiz Banner */}
@@ -1180,6 +1299,32 @@ export function DashboardHome({
             </div>
           ))}
         </div>
+
+        {/* Direct CTA to view handwritten answer copy */}
+        <div style={{ marginTop: 12, textAlign: 'center' }}>
+          <button
+            onClick={() => setIsTopperCopyOpen(true)}
+            style={{
+              width: '100%',
+              background: 'linear-gradient(135deg, #0D9488 0%, #14B8A6 100%)',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: 10,
+              padding: '9px 14px',
+              fontSize: 12,
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              boxShadow: '0 2px 8px rgba(13, 148, 136, 0.25)'
+            }}
+          >
+            <Trophy size={14} />
+            <span>{language === 'hi' ? '📝 स्टेट टॉपर की हस्तलिखित मॉडल कॉपी देखें' : '📝 View State Toppers Handwritten Model Sheet'}</span>
+          </button>
+        </div>
       </div>
 
       {/* 9. FACULTY HELPLINE */}
@@ -1247,6 +1392,63 @@ export function DashboardHome({
           language={language}
         />
       )}
+
+      {/* Floating Action AI Doubt Guru FAB */}
+      <div 
+        onClick={() => setIsAiDoubtOpen(true)}
+        style={{
+          position: 'fixed',
+          bottom: '84px',
+          right: '20px',
+          zIndex: 900,
+          background: 'linear-gradient(135deg, #0D9488 0%, #0F766E 100%)',
+          color: '#FFFFFF',
+          padding: '10px 16px',
+          borderRadius: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          boxShadow: '0 8px 24px -4px rgba(13, 148, 136, 0.5), 0 0 0 2px rgba(45, 212, 191, 0.3)',
+          cursor: 'pointer',
+          transition: 'transform 0.2s ease'
+        }}
+      >
+        <Sparkles size={18} />
+        <span style={{ fontSize: 12, fontWeight: 800 }}>
+          {language === 'hi' ? 'AI गुरुजी से पूछें' : 'Ask AI Guru'}
+        </span>
+      </div>
+
+      {/* Signature EdTech Modals */}
+      <AiDoubtGuruModal 
+        isOpen={isAiDoubtOpen}
+        onClose={() => setIsAiDoubtOpen(false)}
+        language={language}
+      />
+
+      <StreakModal 
+        isOpen={isStreakOpen}
+        onClose={() => setIsStreakOpen(false)}
+        language={language}
+      />
+
+      <TopperCopyModal 
+        isOpen={isTopperCopyOpen}
+        onClose={() => setIsTopperCopyOpen(false)}
+        language={language}
+      />
+
+      <AudioPodsModal 
+        isOpen={isAudioPodsOpen}
+        onClose={() => setIsAudioPodsOpen(false)}
+        language={language}
+      />
+
+      <FlashcardsModal 
+        isOpen={isFlashcardsOpen}
+        onClose={() => setIsFlashcardsOpen(false)}
+        language={language}
+      />
 
     </div>
   );
