@@ -71,12 +71,33 @@ export const authService = {
 
   async signInWithGoogle() {
     if (!supabase) return { error: { message: 'Supabase is not configured' } };
-    return await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin
+    try {
+      const res = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+          skipBrowserRedirect: true
+        }
+      });
+
+      if (res.error) return res;
+
+      if (res.data?.url) {
+        // Probe endpoint to verify domain is valid and reachable before navigating
+        try {
+          await fetch(res.data.url, { method: 'HEAD', mode: 'no-cors' });
+          window.location.href = res.data.url;
+          return { data: res.data };
+        } catch (netErr) {
+          console.warn('Configured Supabase URL is unreachable or invalid (DNS error):', netErr);
+          return { error: { message: 'Supabase URL is unreachable or invalid' } };
+        }
       }
-    });
+      return res;
+    } catch (err) {
+      console.warn('OAuth signIn exception:', err);
+      return { error: err };
+    }
   },
 
   async signOut() {
