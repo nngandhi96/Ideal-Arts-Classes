@@ -100,14 +100,26 @@ export const authService = {
     }
   },
 
-  async signInWithOtp(phone) {
+  async signInWithOtp({ email, phone }) {
     if (!supabase) return { error: { message: 'Supabase is not configured' } };
+    if (email) {
+      return await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: true
+        }
+      });
+    }
     return await supabase.auth.signInWithOtp({ phone });
   },
 
-  async verifyOtp({ phone, token, type = 'sms' }) {
+  async verifyOtp({ email, phone, token, type }) {
     if (!supabase) return { error: { message: 'Supabase is not configured' } };
-    return await supabase.auth.verifyOtp({ phone, token, type });
+    const otpType = type || (email ? 'email' : 'sms');
+    const payload = { token, type: otpType };
+    if (email) payload.email = email;
+    if (phone) payload.phone = phone;
+    return await supabase.auth.verifyOtp(payload);
   },
 
   async resetPasswordForEmail(email) {

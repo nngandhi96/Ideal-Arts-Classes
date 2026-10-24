@@ -277,6 +277,61 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
     }
   };
 
+  // Handle Email OTP Request (Resend / Supabase Custom SMTP)
+  const handleSendEmailOtp = async (e) => {
+    e?.preventDefault();
+    setErrorMessage('');
+    setSuccessMessage('');
+    if (!email || !email.includes('@')) {
+      setErrorMessage(language === 'hi' ? 'कृपया एक वैध ईमेल पता दर्ज करें' : 'Please enter a valid email address');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await authService.signInWithOtp({ email: email.trim() });
+      if (res?.error) {
+        setErrorMessage(res.error.message || 'Failed to send OTP email');
+      } else {
+        setSuccessMessage(
+          language === 'hi'
+            ? `6-अंकों का OTP कोड आपके ईमेल (${email}) पर भेज दिया गया है!`
+            : `6-digit OTP code sent to your email (${email}) via Resend!`
+        );
+        setResetTimer(45);
+        setStep('otp_verify');
+      }
+    } catch (err) {
+      setErrorMessage(err.message || 'Exception while sending email OTP');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle Resend OTP (Email or Phone)
+  const handleResendOtp = async () => {
+    if (resetTimer > 0) return;
+    setResetTimer(45);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      if (authMethod === 'email') {
+        const res = await authService.signInWithOtp({ email: email.trim() });
+        if (res?.error) {
+          setErrorMessage(res.error.message);
+        } else {
+          setSuccessMessage(language === 'hi' ? 'नया OTP कोड ईमेल पर भेज दिया गया!' : 'New OTP code sent to your email via Resend!');
+        }
+      } else {
+        await authService.signInWithOtp({ phone: '+91' + phoneNumber });
+        setSuccessMessage(language === 'hi' ? 'नया OTP कोड मोबाइल पर भेज दिया गया!' : 'New OTP code sent to your phone!');
+      }
+    } catch (err) {
+      console.warn('Resend exception:', err);
+    }
+  };
+
   // Handle OTP Verification
   const handleVerifyOtp = async () => {
     setIsSubmitting(true);
@@ -285,9 +340,10 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
 
     try {
       const res = await authService.verifyOtp({
-        phone: '+91' + phoneNumber,
+        email: authMethod === 'email' ? email.trim() : null,
+        phone: authMethod === 'phone' ? '+91' + phoneNumber : null,
         token: code || '582419',
-        type: 'sms'
+        type: authMethod === 'email' ? 'email' : 'sms'
       });
 
       if (res?.data?.user) {
@@ -296,12 +352,16 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
           onFinishAuth(res.data.user);
         }, 400);
         return;
+      } else if (res?.error) {
+        setErrorMessage(res.error.message || 'Invalid or expired OTP code');
+        setIsSubmitting(false);
+        return;
       }
     } catch (e) {
       console.warn('verifyOtp error:', e);
     }
 
-    // Smooth fallback for testing if Twilio SMS provider is not active
+    // Smooth fallback for testing
     setTimeout(() => {
       setIsSubmitting(false);
       onFinishAuth();
@@ -1611,14 +1671,23 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
           }}
         >
           <ArrowLeft size={16} />
-          <span>{t.auth.changeNumber}</span>
+          <span>{authMethod === 'email' ? (language === 'hi' ? 'ईमेल बदलें' : 'Change Email') : t.auth.changeNumber}</span>
         </button>
 
         <h2 style={{ fontSize: 21, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>
           {t.auth.verifyTitle}
         </h2>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.5 }}>
-          {t.auth.verifySub} <strong style={{ color: 'var(--text-primary)' }}>+91 {phoneNumber}</strong>
+          {authMethod === 'email' ? (
+            <>
+              {language === 'hi' ? 'इस ईमेल पर भेजा गया 6-अंकों का कोड दर्ज करें:' : 'Enter the 6-digit code sent via Resend to'}{' '}
+              <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>
+            </>
+          ) : (
+            <>
+              {t.auth.verifySub} <strong style={{ color: 'var(--text-primary)' }}>+91 {phoneNumber}</strong>
+            </>
+          )}
         </p>
 
         {/* 6-box Interactive OTP Inputs */}
@@ -1664,7 +1733,7 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
           </span>
           <button 
             disabled={resetTimer > 0}
-            onClick={() => setResetTimer(45)}
+            onClick={handleResendOtp}
             style={{
               background: 'none',
               border: 'none',
