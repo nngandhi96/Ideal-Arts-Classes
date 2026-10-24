@@ -22,7 +22,8 @@ export function ProfileSection({
   language = 'en',
   onSelectLanguage,
   onOpenAdmin,
-  onBack
+  onBack,
+  currentUser = null
 }) {
   const t = translations[language] || translations.en;
 
@@ -145,12 +146,16 @@ export function ProfileSection({
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
               <h3 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', fontFamily: 'var(--font-sans)', margin: 0 }}>
-                Aarav Sharma
+                {currentUser?.user_metadata?.full_name || (currentUser?.email ? currentUser.email.split('@')[0] : 'Aarav Sharma')}
               </h3>
               <Sparkles size={14} color="#2DD4BF" />
             </div>
             <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 6, margin: '2px 0 6px' }}>
-              {t.profile.rollLabel}: <strong style={{ color: '#E2E8F0' }}>IAC-2026-088</strong>
+              {currentUser?.email ? (
+                <span style={{ color: '#E2E8F0', fontSize: 11 }}>{currentUser.email}</span>
+              ) : (
+                <>{t.profile.rollLabel}: <strong style={{ color: '#E2E8F0' }}>IAC-2026-088</strong></>
+              )}
             </p>
             <div style={{
               display: 'inline-flex',

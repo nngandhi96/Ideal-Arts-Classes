@@ -14,10 +14,12 @@ import { BottomNavBar } from './components/BottomNavBar';
 import { NotificationsModal } from './components/NotificationsModal';
 import { PdfViewerModal } from './components/PdfViewerModal';
 import { AdminPanel } from './components/AdminPanel';
+import { authService } from './lib/supabaseClient';
 
 export default function App() {
   // App state
   const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
   const [currentTab, setCurrentTab] = useState('home'); // 'home' | 'live' | 'library' | 'profile'
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLiveRoomOpen, setIsLiveRoomOpen] = useState(false);
@@ -68,15 +70,53 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Supabase Auth State Listener
+  useEffect(() => {
+    // 1. Check initial active session
+    authService.getSession().then(({ data }) => {
+      if (data?.session?.user) {
+        setCurrentUser(data.session.user);
+        setIsAuthenticated(true);
+      }
+    }).catch(err => {
+      console.warn('Session check warning:', err);
+    });
+
+    // 2. Subscribe to real-time auth changes
+    const { data: authListener } = authService.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setCurrentUser(session.user);
+        setIsAuthenticated(true);
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => {
+      if (authListener?.subscription) {
+        authListener.subscription.unsubscribe();
+      }
+    };
+  }, []);
+
   const handleToggleTheme = () => {
     setIsDarkMode(prev => !prev);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authService.signOut();
+    } catch (e) {
+      console.warn('Sign out exception:', e);
+    }
+    setCurrentUser(null);
     setIsAuthenticated(false);
   };
 
-  const handleFinishAuth = () => {
+  const handleFinishAuth = (user = null) => {
+    if (user) {
+      setCurrentUser(user);
+    }
     setIsAuthenticated(true);
     setCurrentTab('home');
   };
@@ -294,6 +334,7 @@ export default function App() {
                   onSelectLanguage={setLanguage}
                   onOpenAdmin={() => setCurrentTab('admin')}
                   onBack={() => setCurrentTab('home')}
+                  currentUser={currentUser}
                 />
               )}
 
