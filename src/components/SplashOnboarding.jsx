@@ -2,29 +2,32 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Sparkles, ArrowRight, ShieldCheck, Phone, CheckCircle2, 
   ChevronRight, RefreshCw, BookOpen, Target, Landmark, Languages, Check,
-  Mail, Lock, Eye, EyeOff, User, AlertCircle, ArrowLeft, Key
+  Mail, Lock, Eye, EyeOff, User, AlertCircle, ArrowLeft, Key, UserPlus, LogIn
 } from 'lucide-react';
 import { translations } from '../data/translations';
 import { authService } from '../lib/supabaseClient';
 
 export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLanguage, selectedClass = '12th', onSelectClass }) {
-  // Steps: 'splash' | 'language_select' | 'onboarding' | 'auth_portal' | 'otp_verify'
+  // Navigation Steps: 'splash' | 'language_select' | 'onboarding' | 'auth_portal' | 'otp_verify'
   const [step, setStep] = useState('splash');
   const [activeSlide, setActiveSlide] = useState(0);
 
-  // Authentication Mode & Method
-  const [authMethod, setAuthMethod] = useState('email'); // 'email' | 'phone'
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
+  // Authentication Mode: 'signup' (Default: Create Account First) | 'login'
+  const [authMode, setAuthMode] = useState('signup');
+  // Login Sub-Type: 'password' | 'email_otp' | 'phone_otp'
+  const [loginMethod, setLoginMethod] = useState('password');
 
   // Form Fields
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [studentClass, setStudentClass] = useState(selectedClass || '12th');
   const [phoneNumber, setPhoneNumber] = useState('9876543210');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // OTP State (6 separate input boxes)
+  // OTP State (6 separate interactive input boxes)
   const [otpDigits, setOtpDigits] = useState(['5', '8', '2', '4', '1', '9']);
   const otpInputRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
 
@@ -132,13 +135,64 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
     setErrorMessage('');
   };
 
-  // Handle Real Supabase Email / Password Login & Sign Up
-  const handleEmailAuthSubmit = async (e) => {
+  // 1. CREATE ACCOUNT (SIGN UP)
+  const handleCreateAccount = async (e) => {
     e?.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
 
-    // Case 1: Forgot Password Mode
+    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
+      setErrorMessage(language === 'hi' ? 'कृपया सभी आवश्यक फ़ील्ड भरें' : 'Please fill all required fields');
+      return;
+    }
+
+    if (password.length < 6) {
+      setErrorMessage(language === 'hi' ? 'पासवर्ड कम से कम 6 अक्षरों का होना चाहिए' : 'Password must be at least 6 characters');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage(language === 'hi' ? 'पासवर्ड और पुष्टि पासवर्ड मेल नहीं खा रहे हैं' : 'Passwords do not match');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await authService.signUp({
+        email: email.trim(),
+        password,
+        fullName: fullName.trim(),
+        phone: phoneNumber.trim(),
+        className: studentClass
+      });
+
+      if (res?.error) {
+        setErrorMessage(res.error.message || 'Failed to create student account');
+        setIsSubmitting(false);
+      } else {
+        setSuccessMessage(
+          language === 'hi' 
+            ? 'खाता सफलतापूर्वक बन गया! सत्यापन कोड आपके ईमेल पर भेजा गया है...' 
+            : 'Account registered successfully! Verification OTP sent to your email...'
+        );
+        setTimeout(() => {
+          setIsSubmitting(false);
+          setStep('otp_verify');
+        }, 700);
+      }
+    } catch (err) {
+      setErrorMessage(err.message || 'Registration error occurred');
+      setIsSubmitting(false);
+    }
+  };
+
+  // 2. LOG IN TO EXISTING ACCOUNT
+  const handleLoginSubmit = async (e) => {
+    e?.preventDefault();
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    // Case 1: Forgot Password
     if (isForgotPassword) {
       if (!email.trim()) {
         setErrorMessage(language === 'hi' ? 'कृपया अपना ईमेल पता दर्ज करें' : 'Please enter your registered email address');
@@ -160,8 +214,8 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
       return;
     }
 
-    // Case 2: Login Mode
-    if (authMode === 'login') {
+    // Case 2: Email & Password Login
+    if (loginMethod === 'password') {
       if (!email.trim() || !password) {
         setErrorMessage(language === 'hi' ? 'कृपया ईमेल और पासवर्ड दोनों दर्ज करें' : 'Please enter both email and password');
         return;
@@ -192,69 +246,55 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
       return;
     }
 
-    // Case 3: New Student Registration (Sign Up)
-    if (authMode === 'signup') {
-      if (!fullName.trim() || !email.trim() || !password) {
-        setErrorMessage(language === 'hi' ? 'कृपया सभी आवश्यक फ़ील्ड भरें' : 'Please fill all required fields');
-        return;
-      }
-
-      if (password.length < 6) {
-        setErrorMessage(language === 'hi' ? 'पासवर्ड कम से कम 6 अक्षरों का होना चाहिए' : 'Password must be at least 6 characters');
+    // Case 3: Email OTP Login (via Resend)
+    if (loginMethod === 'email_otp') {
+      if (!email.trim() || !email.includes('@')) {
+        setErrorMessage(language === 'hi' ? 'कृपया एक वैध ईमेल पता दर्ज करें' : 'Please enter a valid email address');
         return;
       }
 
       setIsSubmitting(true);
       try {
-        const res = await authService.signUp({
-          email: email.trim(),
-          password,
-          fullName: fullName.trim(),
-          phone: phoneNumber.trim(),
-          className: studentClass
-        });
-
+        const res = await authService.signInWithOtp({ email: email.trim() });
         if (res?.error) {
-          setErrorMessage(res.error.message || 'Failed to create student account');
+          setErrorMessage(res.error.message || 'Failed to send OTP code');
         } else {
           setSuccessMessage(
-            language === 'hi' 
-              ? 'खाता सफलतापूर्वक बन गया! अकादमी में प्रवेश हो रहा है...' 
-              : 'Account registered successfully! Entering Academy...'
+            language === 'hi'
+              ? `6-अंकों का OTP कोड आपके ईमेल (${email}) पर भेज दिया गया है!`
+              : `6-digit OTP code sent to your email (${email}) via Resend!`
           );
-          setTimeout(() => {
-            onFinishAuth(res?.data?.user || null);
-          }, 600);
+          setResetTimer(45);
+          setStep('otp_verify');
         }
       } catch (err) {
-        setErrorMessage(err.message || 'Sign up exception occurred');
+        setErrorMessage(err.message || 'Exception while sending OTP code');
       } finally {
         setIsSubmitting(false);
       }
-    }
-  };
-
-  // Handle Phone OTP Request
-  const handleSendPhoneOtp = async (e) => {
-    e?.preventDefault();
-    setErrorMessage('');
-    if (phoneNumber.length < 10) {
-      setErrorMessage(language === 'hi' ? 'कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें' : 'Please enter a valid 10-digit number');
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const res = await authService.signInWithOtp('+91' + phoneNumber);
-      if (res?.error) {
-        console.warn('Real Supabase SMS provider returned notice:', res.error.message);
+    // Case 4: Mobile Phone OTP Login
+    if (loginMethod === 'phone_otp') {
+      if (phoneNumber.length < 10) {
+        setErrorMessage(language === 'hi' ? 'कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें' : 'Please enter a valid 10-digit number');
+        return;
       }
-    } catch (err) {
-      console.warn('Phone OTP notice:', err);
-    } finally {
-      setIsSubmitting(false);
-      setResetTimer(45);
-      setStep('otp_verify');
+
+      setIsSubmitting(true);
+      try {
+        const res = await authService.signInWithOtp({ phone: '+91' + phoneNumber });
+        if (res?.error) {
+          console.warn('Real Supabase SMS provider returned notice:', res.error.message);
+        }
+      } catch (err) {
+        console.warn('Phone OTP notice:', err);
+      } finally {
+        setIsSubmitting(false);
+        setResetTimer(45);
+        setStep('otp_verify');
+      }
     }
   };
 
@@ -277,38 +317,7 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
     }
   };
 
-  // Handle Email OTP Request (Resend / Supabase Custom SMTP)
-  const handleSendEmailOtp = async (e) => {
-    e?.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
-    if (!email || !email.includes('@')) {
-      setErrorMessage(language === 'hi' ? 'कृपया एक वैध ईमेल पता दर्ज करें' : 'Please enter a valid email address');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const res = await authService.signInWithOtp({ email: email.trim() });
-      if (res?.error) {
-        setErrorMessage(res.error.message || 'Failed to send OTP email');
-      } else {
-        setSuccessMessage(
-          language === 'hi'
-            ? `6-अंकों का OTP कोड आपके ईमेल (${email}) पर भेज दिया गया है!`
-            : `6-digit OTP code sent to your email (${email}) via Resend!`
-        );
-        setResetTimer(45);
-        setStep('otp_verify');
-      }
-    } catch (err) {
-      setErrorMessage(err.message || 'Exception while sending email OTP');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Handle Resend OTP (Email or Phone)
+  // Handle Resend OTP (Email or Phone via Resend)
   const handleResendOtp = async () => {
     if (resetTimer > 0) return;
     setResetTimer(45);
@@ -316,16 +325,16 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
     setSuccessMessage('');
 
     try {
-      if (authMethod === 'email') {
+      if (loginMethod === 'phone_otp') {
+        await authService.signInWithOtp({ phone: '+91' + phoneNumber });
+        setSuccessMessage(language === 'hi' ? 'नया OTP कोड मोबाइल पर भेज दिया गया!' : 'New OTP code sent to your phone!');
+      } else {
         const res = await authService.signInWithOtp({ email: email.trim() });
         if (res?.error) {
           setErrorMessage(res.error.message);
         } else {
           setSuccessMessage(language === 'hi' ? 'नया OTP कोड ईमेल पर भेज दिया गया!' : 'New OTP code sent to your email via Resend!');
         }
-      } else {
-        await authService.signInWithOtp({ phone: '+91' + phoneNumber });
-        setSuccessMessage(language === 'hi' ? 'नया OTP कोड मोबाइल पर भेज दिया गया!' : 'New OTP code sent to your phone!');
       }
     } catch (err) {
       console.warn('Resend exception:', err);
@@ -339,11 +348,12 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
     const code = otpDigits.join('');
 
     try {
+      const isEmail = loginMethod !== 'phone_otp';
       const res = await authService.verifyOtp({
-        email: authMethod === 'email' ? email.trim() : null,
-        phone: authMethod === 'phone' ? '+91' + phoneNumber : null,
+        email: isEmail ? email.trim() : null,
+        phone: !isEmail ? '+91' + phoneNumber : null,
         token: code || '582419',
-        type: authMethod === 'email' ? 'email' : 'sms'
+        type: isEmail ? 'email' : 'sms'
       });
 
       if (res?.data?.user) {
@@ -947,7 +957,7 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
     );
   }
 
-  /* ---------------- 4. Main Authentication Screen (Real Supabase Auth) ---------------- */
+  /* ---------------- 4. Main Authentication Screen (Account Creation First) ---------------- */
   if (step === 'auth_portal' || step === 'phone_auth') {
     return (
       <div style={{
@@ -997,81 +1007,83 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
             </button>
           </div>
 
-          {/* Heading */}
+          {/* PRIMARY SWITCH: CREATE ACCOUNT vs SIGN IN */}
+          <div style={{
+            display: 'flex',
+            background: 'var(--bg-surface-subtle)',
+            padding: 4,
+            borderRadius: 14,
+            border: '1.5px solid var(--border-subtle)',
+            marginBottom: 18
+          }}>
+            <button
+              type="button"
+              onClick={() => { setAuthMode('signup'); setErrorMessage(''); }}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                padding: '10px 12px',
+                borderRadius: 10,
+                border: 'none',
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: 'pointer',
+                background: authMode === 'signup' ? 'var(--color-accent-teal)' : 'transparent',
+                color: authMode === 'signup' ? '#FFFFFF' : 'var(--text-secondary)',
+                boxShadow: authMode === 'signup' ? '0 2px 8px rgba(13, 148, 136, 0.25)' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <UserPlus size={15} />
+              <span>{language === 'hi' ? 'नया खाता बनाएं' : 'Create Account'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setAuthMode('login'); setErrorMessage(''); }}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                padding: '10px 12px',
+                borderRadius: 10,
+                border: 'none',
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: 'pointer',
+                background: authMode === 'login' ? 'var(--color-primary-navy)' : 'transparent',
+                color: authMode === 'login' ? '#FFFFFF' : 'var(--text-secondary)',
+                boxShadow: authMode === 'login' ? '0 2px 8px rgba(15, 23, 42, 0.25)' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <LogIn size={15} />
+              <span>{language === 'hi' ? 'लॉगिन करें' : 'Sign In'}</span>
+            </button>
+          </div>
+
+          {/* Dynamic Heading */}
           <div style={{ marginBottom: 16 }}>
             <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4, letterSpacing: '-0.01em' }}>
               {isForgotPassword 
                 ? (language === 'hi' ? 'पासवर्ड रीसेट करें' : 'Reset Password')
-                : (authMode === 'login' ? t.auth.loginTitle : t.auth.signupTitle)}
+                : (authMode === 'signup' 
+                    ? (language === 'hi' ? 'नया विद्यार्थी पंजीकरण' : 'Create Student Account')
+                    : (language === 'hi' ? 'विद्यार्थी एवं शिक्षक लॉगिन' : 'Student & Faculty Login'))}
             </h2>
             <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
               {isForgotPassword
                 ? (language === 'hi' ? 'अपना पंजीकृत ईमेल दर्ज करें, हम रीसेट लिंक भेजेंगे' : 'Enter your registered email to receive a password reset link')
-                : (authMethod === 'email'
-                    ? (language === 'hi' ? 'सुपाबेस प्रमाणीकरण द्वारा सुरक्षित प्रवेश' : 'Secured via Supabase Real-time Cloud Auth')
-                    : t.auth.subtitle)}
+                : (authMode === 'signup'
+                    ? (language === 'hi' ? 'बिहार बोर्ड कला संकाय (Classes 8th to 12th) के लिए खाता बनाएं' : 'Register to enroll in Bihar Board Arts stream classes & notes')
+                    : (language === 'hi' ? 'लाइव क्लासेज, नोट्स और टेस्ट के लिए अपने खाते में प्रवेश करें' : 'Sign in to access your live classes, notes & exams'))}
             </p>
           </div>
-
-          {/* Method Tabs: Email vs Phone */}
-          {!isForgotPassword && (
-            <div style={{
-              display: 'flex',
-              background: 'var(--bg-surface-subtle)',
-              padding: 3,
-              borderRadius: 12,
-              border: '1px solid var(--border-subtle)',
-              marginBottom: 16
-            }}>
-              <button
-                type="button"
-                onClick={() => { setAuthMethod('email'); setErrorMessage(''); }}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  padding: '8px 10px',
-                  borderRadius: 9,
-                  border: 'none',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  background: authMethod === 'email' ? 'var(--color-accent-teal)' : 'transparent',
-                  color: authMethod === 'email' ? '#FFFFFF' : 'var(--text-secondary)',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <Mail size={14} />
-                <span>{t.auth.tabEmail}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => { setAuthMethod('phone'); setErrorMessage(''); }}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  padding: '8px 10px',
-                  borderRadius: 9,
-                  border: 'none',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  background: authMethod === 'phone' ? 'var(--color-accent-teal)' : 'transparent',
-                  color: authMethod === 'phone' ? '#FFFFFF' : 'var(--text-secondary)',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <Phone size={14} />
-                <span>{t.auth.tabPhone}</span>
-              </button>
-            </div>
-          )}
 
           {/* Error & Success Alerts */}
           {errorMessage && (
@@ -1112,184 +1124,396 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
             </div>
           )}
 
-          {/* METHOD 1: EMAIL & PASSWORD (SUPABASE AUTH) */}
-          {authMethod === 'email' && (
-            <div>
-              {/* Login vs SignUp Mode Segmented Switch */}
-              {!isForgotPassword && (
+          {/* ======================================================== */}
+          {/* TAB 1: CREATE NEW ACCOUNT (SIGN UP FORM)                 */}
+          {/* ======================================================== */}
+          {authMode === 'signup' && (
+            <form onSubmit={handleCreateAccount}>
+              {/* Full Name */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 5, display: 'block' }}>
+                  {t.auth.fullNameLabel} *
+                </label>
                 <div style={{
                   display: 'flex',
-                  justifyContent: 'center',
-                  marginBottom: 16
+                  alignItems: 'center',
+                  background: 'var(--bg-surface)',
+                  border: '1.5px solid var(--border-subtle)',
+                  borderRadius: 12,
+                  padding: '4px 12px'
                 }}>
-                  <div style={{
-                    display: 'inline-flex',
-                    background: 'var(--bg-surface)',
-                    padding: 3,
-                    borderRadius: 9999,
-                    border: '1px solid var(--border-subtle)'
-                  }}>
-                    <button
-                      type="button"
-                      onClick={() => { setAuthMode('login'); setErrorMessage(''); }}
-                      style={{
-                        padding: '5px 16px',
-                        borderRadius: 9999,
-                        border: 'none',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        background: authMode === 'login' ? 'var(--color-primary-navy)' : 'transparent',
-                        color: authMode === 'login' ? '#FFFFFF' : 'var(--text-secondary)'
-                      }}
-                    >
-                      {language === 'hi' ? 'लॉगिन' : 'Sign In'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setAuthMode('signup'); setErrorMessage(''); }}
-                      style={{
-                        padding: '5px 16px',
-                        borderRadius: 9999,
-                        border: 'none',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        background: authMode === 'signup' ? 'var(--color-primary-navy)' : 'transparent',
-                        color: authMode === 'signup' ? '#FFFFFF' : 'var(--text-secondary)'
-                      }}
-                    >
-                      {language === 'hi' ? 'नया पंजीकरण' : 'Register'}
-                    </button>
-                  </div>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder={t.auth.fullNamePlaceholder}
+                    required
+                    style={{
+                      flex: 1,
+                      border: 'none',
+                      outline: 'none',
+                      padding: '10px 6px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      background: 'transparent'
+                    }}
+                  />
+                  <User size={16} color="var(--text-tertiary)" />
                 </div>
-              )}
+              </div>
 
-              <form onSubmit={handleEmailAuthSubmit}>
-                {/* Registration Only: Full Name & Class */}
-                {authMode === 'signup' && !isForgotPassword && (
-                  <>
-                    <div style={{ marginBottom: 12 }}>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, display: 'block' }}>
-                        {t.auth.fullNameLabel} *
-                      </label>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        background: 'var(--bg-surface)',
-                        border: '1.5px solid var(--border-subtle)',
-                        borderRadius: 12,
-                        padding: '4px 12px'
-                      }}>
-                        <input
-                          type="text"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          placeholder={t.auth.fullNamePlaceholder}
-                          required
-                          style={{
-                            flex: 1,
-                            border: 'none',
-                            outline: 'none',
-                            padding: '10px 6px',
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: 'var(--text-primary)',
-                            background: 'transparent'
-                          }}
-                        />
-                        <User size={16} color="var(--text-tertiary)" />
-                      </div>
-                    </div>
+              {/* Class Selector Pills */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 5, display: 'block' }}>
+                  {t.auth.classLabel} (Arts Stream) *
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+                  {['12th', '11th', '10th', '9th', '8th'].map(cls => (
+                    <button
+                      key={cls}
+                      type="button"
+                      onClick={() => setStudentClass(cls)}
+                      style={{
+                        padding: '6px 0',
+                        borderRadius: 8,
+                        border: studentClass === cls ? '1.5px solid var(--color-accent-teal)' : '1px solid var(--border-subtle)',
+                        background: studentClass === cls ? 'var(--color-accent-teal-tint)' : 'var(--bg-surface)',
+                        color: studentClass === cls ? 'var(--color-accent-teal)' : 'var(--text-secondary)',
+                        fontWeight: 700,
+                        fontSize: 12,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {cls}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                    {/* Class Selector Pills */}
-                    <div style={{ marginBottom: 14 }}>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, display: 'block' }}>
-                        {t.auth.classLabel} *
-                      </label>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
-                        {['12th', '11th', '10th', '9th', '8th'].map(cls => (
-                          <button
-                            key={cls}
-                            type="button"
-                            onClick={() => setStudentClass(cls)}
-                            style={{
-                              padding: '6px 0',
-                              borderRadius: 8,
-                              border: studentClass === cls ? '1.5px solid var(--color-accent-teal)' : '1px solid var(--border-subtle)',
-                              background: studentClass === cls ? 'var(--color-accent-teal-tint)' : 'var(--bg-surface)',
-                              color: studentClass === cls ? 'var(--color-accent-teal)' : 'var(--text-secondary)',
-                              fontWeight: 700,
-                              fontSize: 12,
-                              cursor: 'pointer'
-                            }}
-                          >
-                            {cls}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Email Field */}
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, display: 'block' }}>
-                    {t.auth.emailLabel} *
-                  </label>
+              {/* Mobile Number */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 5, display: 'block' }}>
+                  {t.auth.mobileLabel} *
+                </label>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: 'var(--bg-surface)',
+                  border: '1.5px solid var(--border-subtle)',
+                  borderRadius: 12,
+                  padding: '4px 12px'
+                }}>
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    background: 'var(--bg-surface)',
-                    border: '1.5px solid var(--border-subtle)',
-                    borderRadius: 12,
-                    padding: '4px 12px'
+                    gap: 4,
+                    paddingRight: 8,
+                    borderRight: '1px solid var(--border-subtle)',
+                    color: 'var(--text-primary)',
+                    fontWeight: 600,
+                    fontSize: 12
                   }}>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder={t.auth.emailPlaceholder}
-                      required
-                      style={{
-                        flex: 1,
-                        border: 'none',
-                        outline: 'none',
-                        padding: '10px 6px',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: 'var(--text-primary)',
-                        background: 'transparent'
-                      }}
-                    />
-                    <Mail size={16} color="var(--text-tertiary)" />
+                    <span>🇮🇳</span>
+                    <span>+91</span>
                   </div>
+                  <input
+                    type="tel"
+                    maxLength="10"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                    placeholder={t.auth.mobilePlaceholder}
+                    required
+                    style={{
+                      flex: 1,
+                      border: 'none',
+                      outline: 'none',
+                      padding: '10px 8px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      background: 'transparent'
+                    }}
+                  />
+                  <Phone size={16} color="var(--text-tertiary)" />
                 </div>
+              </div>
 
-                {/* Password Field (if not in forgot password mode) */}
-                {!isForgotPassword && (
+              {/* Email Address */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 5, display: 'block' }}>
+                  {t.auth.emailLabel} *
+                </label>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: 'var(--bg-surface)',
+                  border: '1.5px solid var(--border-subtle)',
+                  borderRadius: 12,
+                  padding: '4px 12px'
+                }}>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t.auth.emailPlaceholder}
+                    required
+                    style={{
+                      flex: 1,
+                      border: 'none',
+                      outline: 'none',
+                      padding: '10px 6px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      background: 'transparent'
+                    }}
+                  />
+                  <Mail size={16} color="var(--text-tertiary)" />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 5, display: 'block' }}>
+                  {t.auth.passwordLabel} (min 6 chars) *
+                </label>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: 'var(--bg-surface)',
+                  border: '1.5px solid var(--border-subtle)',
+                  borderRadius: 12,
+                  padding: '4px 12px'
+                }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={t.auth.passwordPlaceholder}
+                    required
+                    style={{
+                      flex: 1,
+                      border: 'none',
+                      outline: 'none',
+                      padding: '10px 6px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      background: 'transparent'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--text-tertiary)' }}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 5, display: 'block' }}>
+                  {t.auth.confirmPasswordLabel || 'Confirm Password'} *
+                </label>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: 'var(--bg-surface)',
+                  border: '1.5px solid var(--border-subtle)',
+                  borderRadius: 12,
+                  padding: '4px 12px'
+                }}>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder={t.auth.confirmPasswordPlaceholder || 'Re-enter your password'}
+                    required
+                    style={{
+                      flex: 1,
+                      border: 'none',
+                      outline: 'none',
+                      padding: '10px 6px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      background: 'transparent'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--text-tertiary)' }}
+                  >
+                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit Create Account */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn-primary"
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: 14,
+                  fontSize: 15,
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  marginBottom: 14
+                }}
+              >
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                    <span>{language === 'hi' ? 'खाता बन रहा है...' : 'Creating Account...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{language === 'hi' ? 'खाता बनाएं (Create Account)' : 'Create Student Account'}</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
+
+              {/* Switch to Login link */}
+              <div style={{ textAlign: 'center', padding: '6px 0' }}>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                  {language === 'hi' ? 'पहले से खाता है?' : 'Already have an account?'}{' '}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('login'); setErrorMessage(''); }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-accent-teal)',
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  {language === 'hi' ? 'यहाँ लॉगिन करें (Sign In)' : 'Sign In here'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* ======================================================== */}
+          {/* TAB 2: LOG IN TO EXISTING ACCOUNT                        */}
+          {/* ======================================================== */}
+          {authMode === 'login' && (
+            <div>
+              {/* Login Method Sub-selector */}
+              {!isForgotPassword && (
+                <div style={{
+                  display: 'flex',
+                  gap: 6,
+                  marginBottom: 16
+                }}>
+                  {[
+                    { id: 'password', label: language === 'hi' ? 'पासवर्ड' : 'Password', icon: Lock },
+                    { id: 'email_otp', label: language === 'hi' ? 'ईमेल OTP (Resend)' : 'Email OTP', icon: Mail },
+                    { id: 'phone_otp', label: language === 'hi' ? 'फोन OTP' : 'Phone OTP', icon: Phone }
+                  ].map(method => {
+                    const MethodIcon = method.icon;
+                    return (
+                      <button
+                        key={method.id}
+                        type="button"
+                        onClick={() => { setLoginMethod(method.id); setErrorMessage(''); }}
+                        style={{
+                          flex: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 5,
+                          padding: '7px 6px',
+                          borderRadius: 10,
+                          border: loginMethod === method.id ? '1.5px solid var(--color-accent-teal)' : '1px solid var(--border-subtle)',
+                          background: loginMethod === method.id ? 'var(--color-accent-teal-tint)' : 'var(--bg-surface)',
+                          color: loginMethod === method.id ? 'var(--color-accent-teal)' : 'var(--text-secondary)',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <MethodIcon size={13} />
+                        <span>{method.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <form onSubmit={handleLoginSubmit}>
+                {/* Method A: Email & Password OR Email OTP */}
+                {loginMethod !== 'phone_otp' && (
                   <div style={{ marginBottom: 12 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 5, display: 'block' }}>
+                      {t.auth.emailLabel} *
+                    </label>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      background: 'var(--bg-surface)',
+                      border: '1.5px solid var(--border-subtle)',
+                      borderRadius: 12,
+                      padding: '4px 12px'
+                    }}>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder={t.auth.emailPlaceholder}
+                        required
+                        style={{
+                          flex: 1,
+                          border: 'none',
+                          outline: 'none',
+                          padding: '10px 6px',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: 'var(--text-primary)',
+                          background: 'transparent'
+                        }}
+                      />
+                      <Mail size={16} color="var(--text-tertiary)" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Password field only if Password login */}
+                {loginMethod === 'password' && !isForgotPassword && (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
                       <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                         {t.auth.passwordLabel} *
                       </label>
-                      {authMode === 'login' && (
-                        <button
-                          type="button"
-                          onClick={() => { setIsForgotPassword(true); setErrorMessage(''); }}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'var(--color-accent-teal)',
-                            fontSize: 11,
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            padding: 0
-                          }}
-                        >
-                          {t.auth.forgotPassword}
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => { setIsForgotPassword(true); setErrorMessage(''); }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--color-accent-teal)',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          padding: 0
+                        }}
+                      >
+                        {t.auth.forgotPassword}
+                      </button>
                     </div>
                     <div style={{
                       display: 'flex',
@@ -1319,14 +1543,7 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          padding: 4,
-                          cursor: 'pointer',
-                          color: 'var(--text-tertiary)'
-                        }}
-                        aria-label="Toggle password view"
+                        style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--text-tertiary)' }}
                       >
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -1334,9 +1551,59 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
                   </div>
                 )}
 
-                {/* Quick Autofill Demo Hint (Only in Login) */}
-                {authMode === 'login' && !isForgotPassword && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                {/* Method B: Phone OTP Input */}
+                {loginMethod === 'phone_otp' && (
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 5, display: 'block' }}>
+                      {t.auth.mobileLabel} *
+                    </label>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      background: 'var(--bg-surface)',
+                      border: '1.5px solid var(--border-subtle)',
+                      borderRadius: 12,
+                      padding: '4px 12px'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        paddingRight: 8,
+                        borderRight: '1px solid var(--border-subtle)',
+                        color: 'var(--text-primary)',
+                        fontWeight: 600,
+                        fontSize: 12
+                      }}>
+                        <span>🇮🇳</span>
+                        <span>+91</span>
+                      </div>
+                      <input
+                        type="tel"
+                        maxLength="10"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                        placeholder={t.auth.mobilePlaceholder}
+                        required
+                        style={{
+                          flex: 1,
+                          border: 'none',
+                          outline: 'none',
+                          padding: '10px 8px',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: 'var(--text-primary)',
+                          background: 'transparent'
+                        }}
+                      />
+                      <Phone size={16} color="var(--text-tertiary)" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Demo Autofill Hint (in Password mode) */}
+                {loginMethod === 'password' && !isForgotPassword && (
+                  <div style={{ marginBottom: 14 }}>
                     <button
                       type="button"
                       onClick={handleAutofillDemo}
@@ -1353,15 +1620,14 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
                         alignItems: 'center',
                         gap: 4
                       }}
-                      title="Click to fill test credentials"
                     >
                       <Key size={12} />
-                      <span>{language === 'hi' ? 'डेमो ईमेल/पासवर्ड भरें' : 'Autofill Demo Credentials'}</span>
+                      <span>{language === 'hi' ? '💡 डेमो क्रेडेंशियल्स भरें' : '💡 Autofill Demo Login'}</span>
                     </button>
                   </div>
                 )}
 
-                {/* Submit Email Button */}
+                {/* Submit Login Button */}
                 <button
                   type="submit"
                   disabled={isSubmitting}
@@ -1376,8 +1642,7 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 8,
-                    marginBottom: 12,
-                    opacity: isSubmitting ? 0.7 : 1
+                    marginBottom: 12
                   }}
                 >
                   {isSubmitting ? (
@@ -1390,7 +1655,9 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
                       <span>
                         {isForgotPassword 
                           ? t.auth.forgotPassPrompt 
-                          : (authMode === 'login' ? t.auth.submitLogin : t.auth.submitSignup)}
+                          : (loginMethod === 'password' 
+                              ? t.auth.submitLogin 
+                              : (language === 'hi' ? 'OTP कोड प्राप्त करें' : 'Get 6-Digit OTP'))}
                       </span>
                       <ArrowRight size={16} />
                     </>
@@ -1420,198 +1687,100 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
                   </button>
                 )}
               </form>
-            </div>
-          )}
 
-          {/* METHOD 2: PHONE NUMBER OTP */}
-          {authMethod === 'phone' && (
-            <form onSubmit={handleSendPhoneOtp}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, display: 'block' }}>
-                {t.auth.mobileLabel}
-              </label>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: 'var(--bg-surface)',
-                border: '1.5px solid var(--border-subtle)',
-                borderRadius: 12,
-                padding: '4px 12px',
-                marginBottom: 12,
-                boxShadow: 'var(--shadow-xs)'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  paddingRight: 10,
-                  borderRight: '1px solid var(--border-subtle)',
-                  color: 'var(--text-primary)',
-                  fontWeight: 600,
-                  fontSize: 13
-                }}>
-                  <span style={{ fontSize: 15 }}>🇮🇳</span>
-                  <span>+91</span>
-                </div>
-                <input
-                  type="tel"
-                  maxLength="10"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-                  placeholder={t.auth.mobilePlaceholder}
-                  style={{
-                    flex: 1,
-                    border: 'none',
-                    outline: 'none',
-                    padding: '10px 8px',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    background: 'transparent'
-                  }}
-                />
-                <Phone size={16} color="var(--text-tertiary)" />
-              </div>
-
-              <div style={{
-                background: 'var(--color-accent-teal-tint)',
-                border: '1px solid rgba(13, 148, 136, 0.25)',
-                borderRadius: 10,
-                padding: '8px 12px',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 8,
-                marginBottom: 16
-              }}>
-                <ShieldCheck size={16} color="var(--color-accent-teal)" style={{ flexShrink: 0, marginTop: 1 }} />
-                <span style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                  {t.auth.otpHelper}
+              {/* Social Login & Divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '12px 0 14px' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+                <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
+                  {t.auth.orDivider}
                 </span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
               </div>
 
+              {/* Google Sign In */}
               <button
-                type="submit"
-                disabled={isSubmitting}
-                className="btn-primary"
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isGoogleLoading}
                 style={{
                   width: '100%',
-                  padding: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  background: '#FFFFFF',
+                  color: '#1F2937',
+                  border: '1.5px solid #E5E7EB',
                   borderRadius: 12,
-                  fontSize: 14,
+                  padding: '10px 16px',
+                  fontSize: 13,
                   fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+                  marginBottom: 10
+                }}
+              >
+                {isGoogleLoading ? (
+                  <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3h3.88c2.27-2.09 3.66-5.17 3.66-9.09z" />
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.09C3.27 21.37 7.36 24 12 24z" />
+                    <path fill="#FBBC05" d="M5.28 14.32c-.25-.72-.38-1.49-.38-2.32s.13-1.6.38-2.32V6.59H1.26C.46 8.19 0 9.99 0 12s.46 3.81 1.26 5.41l4.02-3.09z" />
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.36 0 3.27 2.63 1.26 6.59l4.02 3.09c.95-2.83 3.6-4.93 6.72-4.93z" />
+                  </svg>
+                )}
+                <span>{isGoogleLoading ? t.auth.googleSigningIn : t.auth.googleLoginBtn}</span>
+              </button>
+
+              {/* 1-Tap Guest Access */}
+              <button
+                type="button"
+                onClick={() => onFinishAuth()}
+                style={{
+                  width: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  marginBottom: 12
+                  background: 'var(--bg-surface)',
+                  border: '1.5px solid var(--border-subtle)',
+                  borderRadius: 12,
+                  padding: '10px 16px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: 'var(--color-accent-teal)',
+                  cursor: 'pointer',
+                  marginBottom: 14
                 }}
               >
-                {isSubmitting ? (
-                  <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                ) : (
-                  <>
-                    <span>{t.auth.getOtpBtn}</span>
-                    <ChevronRight size={16} />
-                  </>
-                )}
+                <Sparkles size={14} />
+                <span>{t.auth.guestLoginBtn}</span>
               </button>
-            </form>
+
+              {/* Switch to Create Account link */}
+              <div style={{ textAlign: 'center', padding: '4px 0' }}>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                  {language === 'hi' ? 'खाता नहीं है?' : "Don't have an account?"}{' '}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('signup'); setErrorMessage(''); }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-accent-teal)',
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  {language === 'hi' ? 'नया खाता बनाएं (Create Account)' : 'Create an Account here'}
+                </button>
+              </div>
+            </div>
           )}
-
-          {/* Social Divider: OR */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            margin: '12px 0 14px'
-          }}>
-            <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
-            <span style={{
-              fontSize: 10,
-              fontWeight: 800,
-              color: 'var(--text-tertiary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              {t.auth.orDivider}
-            </span>
-            <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
-          </div>
-
-          {/* Google Sign In Button */}
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={isGoogleLoading}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              background: '#FFFFFF',
-              color: '#1F2937',
-              border: '1.5px solid #E5E7EB',
-              borderRadius: 12,
-              padding: '10px 16px',
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-              transition: 'all 0.15s ease',
-              marginBottom: 10
-            }}
-          >
-            {isGoogleLoading ? (
-              <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3h3.88c2.27-2.09 3.66-5.17 3.66-9.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.09C3.27 21.37 7.36 24 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.28 14.32c-.25-.72-.38-1.49-.38-2.32s.13-1.6.38-2.32V6.59H1.26C.46 8.19 0 9.99 0 12s.46 3.81 1.26 5.41l4.02-3.09z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.36 0 3.27 2.63 1.26 6.59l4.02 3.09c.95-2.83 3.6-4.93 6.72-4.93z"
-                />
-              </svg>
-            )}
-            <span>
-              {isGoogleLoading ? t.auth.googleSigningIn : t.auth.googleLoginBtn}
-            </span>
-          </button>
-
-          {/* Quick 1-Tap Guest Access */}
-          <button
-            type="button"
-            onClick={() => onFinishAuth()}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              background: 'var(--bg-surface)',
-              border: '1.5px solid var(--border-subtle)',
-              borderRadius: 12,
-              padding: '10px 16px',
-              fontSize: 12,
-              fontWeight: 700,
-              color: 'var(--color-accent-teal)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <Sparkles size={14} />
-            <span>{t.auth.guestLoginBtn}</span>
-          </button>
         </div>
 
         {/* Footer Navigation & Terms */}
@@ -1671,21 +1840,21 @@ export function SplashOnboarding({ onFinishAuth, language = 'en', onSelectLangua
           }}
         >
           <ArrowLeft size={16} />
-          <span>{authMethod === 'email' ? (language === 'hi' ? 'ईमेल बदलें' : 'Change Email') : t.auth.changeNumber}</span>
+          <span>{loginMethod === 'phone_otp' ? t.auth.changeNumber : (language === 'hi' ? 'ईमेल बदलें' : 'Change Email')}</span>
         </button>
 
         <h2 style={{ fontSize: 21, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>
           {t.auth.verifyTitle}
         </h2>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.5 }}>
-          {authMethod === 'email' ? (
+          {loginMethod === 'phone_otp' ? (
             <>
-              {language === 'hi' ? 'इस ईमेल पर भेजा गया 6-अंकों का कोड दर्ज करें:' : 'Enter the 6-digit code sent via Resend to'}{' '}
-              <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>
+              {t.auth.verifySub} <strong style={{ color: 'var(--text-primary)' }}>+91 {phoneNumber}</strong>
             </>
           ) : (
             <>
-              {t.auth.verifySub} <strong style={{ color: 'var(--text-primary)' }}>+91 {phoneNumber}</strong>
+              {language === 'hi' ? 'इस ईमेल पर भेजा गया 6-अंकों का OTP कोड दर्ज करें:' : 'Enter the 6-digit OTP code sent via Resend to'}{' '}
+              <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>
             </>
           )}
         </p>
