@@ -12,6 +12,7 @@ import {
   getSubjectDisplayName
 } from '../data/curriculumData';
 import { translations } from '../data/translations';
+import { FeePaymentModal } from './FeePaymentModal';
 
 export function ProfileSection({ 
   selectedClass = '12th', 
@@ -30,12 +31,14 @@ export function ProfileSection({
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [showReceiptToast, setShowReceiptToast] = useState(false);
+  const [isFeeModalOpen, setIsFeeModalOpen] = useState(false);
 
   const currentClassInfo = CLASSES_CONFIG.find(c => c.id === selectedClass) || CLASSES_CONFIG[0];
   const currentSubjects = SUBJECTS_BY_CLASS[selectedClass] || [];
 
   const handleDownloadReceipt = () => {
-    setShowReceiptToast(true);
+    setIsFeeModalOpen(true);
+    return;
     setTimeout(() => setShowReceiptToast(false), 3000);
   };
 
@@ -808,6 +811,15 @@ export function ProfileSection({
         </div>
       )}
 
-    </div>
+    
+      {/* Fee Payment & Official Receipt Modal */}
+      <FeePaymentModal 
+        isOpen={isFeeModalOpen}
+        onClose={() => setIsFeeModalOpen(false)}
+        currentUser={currentUser}
+        selectedClass={selectedClass}
+        language={language}
+      />
+</div>
   );
 }

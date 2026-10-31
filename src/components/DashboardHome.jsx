@@ -23,6 +23,10 @@ import { StreakModal } from './StreakModal';
 import { TopperCopyModal } from './TopperCopyModal';
 import { AudioPodsModal } from './AudioPodsModal';
 import { FlashcardsModal } from './FlashcardsModal';
+import { OmrTestModal } from './OmrTestModal';
+import { FeePaymentModal } from './FeePaymentModal';
+import { PyqBankModal } from './PyqBankModal';
+import { WhatsAppCommunityModal } from './WhatsAppCommunityModal';
 
 // Icon resolver helper
 const getSubjectIcon = (iconName) => {
@@ -109,6 +113,10 @@ export function DashboardHome({
   const [isTopperCopyOpen, setIsTopperCopyOpen] = useState(false);
   const [isAudioPodsOpen, setIsAudioPodsOpen] = useState(false);
   const [isFlashcardsOpen, setIsFlashcardsOpen] = useState(false);
+  const [isOmrOpen, setIsOmrOpen] = useState(false);
+  const [isFeeOpen, setIsFeeOpen] = useState(false);
+  const [isPyqOpen, setIsPyqOpen] = useState(false);
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
 
   const filteredSubjects = currentSubjects.filter(sub => {
     if (!searchQuery.trim()) return true;
@@ -627,6 +635,157 @@ export function DashboardHome({
             </button>
           );
         })}
+      </div>
+
+      {/* 2c-iii. BSEB 2026 Core Utilities Suite (OMR Test, 10-Yr PYQ, Fee & Receipt, WhatsApp Community) */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: 10
+      }}>
+        {/* 1. OMR Test Series */}
+        <div
+          onClick={() => setIsOmrOpen(true)}
+          className="art-card"
+          style={{
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.06) 100%)',
+            border: '1.5px solid rgba(16, 185, 129, 0.35)',
+            borderRadius: 16,
+            padding: '14px',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 20 }}>📝</span>
+            <span style={{
+              fontSize: 9.5,
+              fontWeight: 800,
+              padding: '2px 6px',
+              borderRadius: 6,
+              background: '#10B981',
+              color: '#FFFFFF'
+            }}>
+              LIVE OMR
+            </span>
+          </div>
+          <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+            {language === 'hi' ? 'OMR टेस्ट सीरीज़' : 'OMR Mock Test'}
+          </h4>
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+            {language === 'hi' ? '50/50 टारगेट • तुरंत रिज़ल्ट व रैंक' : '50/50 Target • Instant Rank'}
+          </span>
+        </div>
+
+        {/* 2. 10 Years Solved PYQ Bank */}
+        <div
+          onClick={() => setIsPyqOpen(true)}
+          className="art-card"
+          style={{
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.06) 100%)',
+            border: '1.5px solid rgba(245, 158, 11, 0.35)',
+            borderRadius: 16,
+            padding: '14px',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 20 }}>📂</span>
+            <span style={{
+              fontSize: 9.5,
+              fontWeight: 800,
+              padding: '2px 6px',
+              borderRadius: 6,
+              background: '#F59E0B',
+              color: '#FFFFFF'
+            }}>
+              2016-2025
+            </span>
+          </div>
+          <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+            {language === 'hi' ? '10 वर्ष PYQ पेपर्स' : '10-Yr Solved PYQs'}
+          </h4>
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+            {language === 'hi' ? 'बोर्ड मॉडल हल • ऑफलाइन PDF' : 'Model Solutions • Offline PDF'}
+          </span>
+        </div>
+
+        {/* 3. Online Fee & Receipts */}
+        <div
+          onClick={() => setIsFeeOpen(true)}
+          className="art-card"
+          style={{
+            background: 'linear-gradient(135deg, rgba(13, 148, 136, 0.12) 0%, rgba(15, 118, 110, 0.06) 100%)',
+            border: '1.5px solid rgba(13, 148, 136, 0.35)',
+            borderRadius: 16,
+            padding: '14px',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 20 }}>💳</span>
+            <span style={{
+              fontSize: 9.5,
+              fontWeight: 800,
+              padding: '2px 6px',
+              borderRadius: 6,
+              background: '#0D9488',
+              color: '#FFFFFF'
+            }}>
+              UPI / QR
+            </span>
+          </div>
+          <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+            {language === 'hi' ? 'फीस & डिजिटल रसीद' : 'Fee & Receipts'}
+          </h4>
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+            {language === 'hi' ? 'PhonePe/GPay • पक्की रसीद' : 'Instant Pay & Official Receipt'}
+          </span>
+        </div>
+
+        {/* 4. WhatsApp Official Batch Group */}
+        <div
+          onClick={() => setIsWhatsAppOpen(true)}
+          className="art-card"
+          style={{
+            background: 'linear-gradient(135deg, rgba(37, 211, 102, 0.12) 0%, rgba(22, 163, 74, 0.06) 100%)',
+            border: '1.5px solid rgba(37, 211, 102, 0.4)',
+            borderRadius: 16,
+            padding: '14px',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 20 }}>💬</span>
+            <span style={{
+              fontSize: 9.5,
+              fontWeight: 800,
+              padding: '2px 6px',
+              borderRadius: 6,
+              background: '#25D366',
+              color: '#FFFFFF'
+            }}>
+              2,450+ ACTIVE
+            </span>
+          </div>
+          <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+            {language === 'hi' ? 'WhatsApp कम्युनिटी' : 'WhatsApp Group'}
+          </h4>
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+            {language === 'hi' ? 'ऑफिशियल बैच • शिक्षक सहायता' : 'Official Batch & Helpline'}
+          </span>
+        </div>
       </div>
 
       {/* 2d. Quick Practice Quiz Banner */}
@@ -1479,6 +1638,36 @@ export function DashboardHome({
       <FlashcardsModal 
         isOpen={isFlashcardsOpen}
         onClose={() => setIsFlashcardsOpen(false)}
+        language={language}
+      />
+
+      {/* BSEB 2026 Core Utilities Modals */}
+      <OmrTestModal 
+        isOpen={isOmrOpen}
+        onClose={() => setIsOmrOpen(false)}
+        language={language}
+        selectedClass={selectedClass}
+        currentUser={currentUser}
+      />
+
+      <FeePaymentModal 
+        isOpen={isFeeOpen}
+        onClose={() => setIsFeeOpen(false)}
+        language={language}
+        selectedClass={selectedClass}
+        currentUser={currentUser}
+      />
+
+      <PyqBankModal 
+        isOpen={isPyqOpen}
+        onClose={() => setIsPyqOpen(false)}
+        language={language}
+        selectedClass={selectedClass}
+      />
+
+      <WhatsAppCommunityModal 
+        isOpen={isWhatsAppOpen}
+        onClose={() => setIsWhatsAppOpen(false)}
         language={language}
       />
 
