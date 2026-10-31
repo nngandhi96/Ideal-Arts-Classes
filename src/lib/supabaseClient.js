@@ -122,6 +122,14 @@ export const authService = {
     return await supabase.auth.verifyOtp(payload);
   },
 
+  async resendOtp({ email, phone, type = 'signup' }) {
+    if (!supabase) return { error: { message: 'Supabase is not configured' } };
+    if (email) {
+      return await supabase.auth.resend({ type, email });
+    }
+    return await supabase.auth.signInWithOtp({ phone });
+  },
+
   async resetPasswordForEmail(email) {
     if (!supabase) return { error: { message: 'Supabase is not configured' } };
     return await supabase.auth.resetPasswordForEmail(email, {
