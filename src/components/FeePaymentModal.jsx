@@ -532,3 +532,4 @@ export function FeePaymentModal({ isOpen, onClose, language = 'hi', selectedClas
     </div>
   );
 }
+

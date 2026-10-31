@@ -405,3 +405,4 @@ export function PyqBankModal({ isOpen, onClose, language = 'hi', selectedClass =
     </div>
   );
 }
+
