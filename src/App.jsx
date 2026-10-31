@@ -297,6 +297,7 @@ export default function App() {
                   onOpenLiveRoom={handleOpenLiveRoom}
                   onOpenNotifications={() => setIsNotificationsOpen(true)}
                   language={language}
+                  currentUser={currentUser}
                 />
               )}
 
@@ -354,6 +355,7 @@ export default function App() {
             <LiveRoomModal 
               session={activeLiveSession}
               language={language}
+              currentUser={currentUser}
               onClose={() => {
                 setIsLiveRoomOpen(false);
                 setActiveLiveSession(null);

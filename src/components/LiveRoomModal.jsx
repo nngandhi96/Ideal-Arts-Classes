@@ -5,7 +5,7 @@ import {
   Download, Check, Mic, MicOff, AlertCircle, Bookmark 
 } from 'lucide-react';
 
-export function LiveRoomModal({ onClose, session, language = 'hi' }) {
+export function LiveRoomModal({ onClose, session, language = 'hi', currentUser }) {
   const [activeDrawer, setActiveDrawer] = useState('chat'); // 'chat' | 'notes' | 'settings'
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [isHandApproved, setIsHandApproved] = useState(false);
@@ -147,9 +147,11 @@ export function LiveRoomModal({ onClose, session, language = 'hi' }) {
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!chatMessage.trim()) return;
+    const myName = currentUser?.user_metadata?.full_name || 
+      (currentUser?.email ? currentUser.email.split('@')[0] : 'Nandan');
     const newMsg = {
       id: Date.now(),
-      sender: 'Aarav Sharma (You)',
+      sender: `${myName} (You)`,
       role: 'Student',
       text: chatMessage.trim(),
       isTeacher: false,

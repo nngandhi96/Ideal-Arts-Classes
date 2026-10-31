@@ -108,7 +108,7 @@ export function AdminPanel({
     try {
       const saved = localStorage.getItem('ideal_admin_students');
       return saved ? JSON.parse(saved) : [
-        { id: 'std-1', name: 'Aarav Sharma', rollNo: 'IAC-2026-088', phone: '9876543210', classId: '12th', attendance: '96%', score: '91.4%', fees: 'paid' },
+        { id: 'std-1', name: 'Nandan', rollNo: 'IAC-2026-088', phone: '9876543210', classId: '12th', attendance: '96%', score: '91.4%', fees: 'paid' },
         { id: 'std-2', name: 'Pooja Kumari', rollNo: 'IAC-2026-012', phone: '9876543211', classId: '12th', attendance: '98%', score: '94.2%', fees: 'paid' },
         { id: 'std-3', name: 'Amit Kumar', rollNo: 'IAC-2026-045', phone: '9876543212', classId: '12th', attendance: '92%', score: '88.6%', fees: 'paid' },
         { id: 'std-4', name: 'Khushi Mishra', rollNo: 'IAC-2026-094', phone: '9876543213', classId: '11th', attendance: '95%', score: '89.0%', fees: 'paid' },

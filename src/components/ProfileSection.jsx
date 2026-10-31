@@ -121,7 +121,7 @@ export function ProfileSection({
           <div style={{ position: 'relative' }}>
             <img 
               src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop&q=80" 
-              alt="Aarav Sharma"
+              alt={currentUser?.user_metadata?.full_name || 'Student'}
               style={{
                 width: 60,
                 height: 60,
@@ -146,7 +146,7 @@ export function ProfileSection({
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
               <h3 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', fontFamily: 'var(--font-sans)', margin: 0 }}>
-                {currentUser?.user_metadata?.full_name || (currentUser?.email ? currentUser.email.split('@')[0] : 'Aarav Sharma')}
+                {currentUser?.user_metadata?.full_name || (currentUser?.email ? currentUser.email.split('@')[0] : 'Nandan')}
               </h3>
               <Sparkles size={14} color="#2DD4BF" />
             </div>

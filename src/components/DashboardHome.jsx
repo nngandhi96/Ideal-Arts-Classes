@@ -52,9 +52,21 @@ export function DashboardHome({
   onNavigate, 
   onOpenLiveRoom, 
   onOpenNotifications,
-  language = 'en'
+  language = 'en',
+  currentUser
 }) {
   const t = translations[language] || translations.en;
+
+  const studentName = currentUser?.user_metadata?.full_name || 
+    (currentUser?.email ? currentUser.email.split('@')[0] : 'Nandan');
+
+  const getInitials = (name) => {
+    if (!name) return 'N';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+  const initials = getInitials(studentName);
 
   const [activeBanner, setActiveBanner] = useState(0);
   const [supabaseAnnouncements, setSupabaseAnnouncements] = useState([]);
@@ -280,7 +292,7 @@ export function DashboardHome({
               boxShadow: '0 4px 12px rgba(13, 148, 136, 0.25)',
               border: '2px solid var(--bg-surface)'
             }}>
-              AS
+              {initials}
             </div>
             <div style={{
               position: 'absolute',
@@ -319,7 +331,7 @@ export function DashboardHome({
               letterSpacing: '-0.01em',
               margin: '2px 0 0'
             }}>
-              Aarav Sharma
+              {studentName}
             </h2>
           </div>
         </div>
