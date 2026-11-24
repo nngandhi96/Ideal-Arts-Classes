@@ -5,7 +5,8 @@ import {
   ArrowLeft, Search, Eye, Filter, Calendar, Clock, 
   Video, FileText, Download, Phone, Sparkles, Check, 
   ChevronRight, RefreshCw, X, HardDrive, Play, Square,
-  Layers, Target, PenTool, ExternalLink, UserCheck
+  Layers, Target, PenTool, ExternalLink, UserCheck,
+  UploadCloud, FileCheck, Link2
 } from 'lucide-react';
 import { 
   CLASSES_CONFIG, 
@@ -56,6 +57,18 @@ export function AdminPanel({
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [showAddTopperModal, setShowAddTopperModal] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  // PDF Upload Modal Form States
+  const [noteUploadType, setNoteUploadType] = useState('file'); // 'file' | 'link'
+  const [selectedNoteFile, setSelectedNoteFile] = useState(null);
+  const [noteModalClass, setNoteModalClass] = useState('12th');
+  const [noteModalSubject, setNoteModalSubject] = useState('history');
+  const [customSubjectText, setCustomSubjectText] = useState('');
+  const [noteTitleInput, setNoteTitleInput] = useState('');
+  const [noteFileSizeInput, setNoteFileSizeInput] = useState('6.5');
+  const [notePagesInput, setNotePagesInput] = useState('28');
+  const [noteCategoryBadge, setNoteCategoryBadge] = useState('objective');
+  const [noteDriveUrl, setNoteDriveUrl] = useState('');
 
   // 4. Data States with LocalStorage Persistence
   const [liveClassesList, setLiveClassesList] = useState(() => {
@@ -1427,8 +1440,32 @@ export function AdminPanel({
                       <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
                         {note.title}
                       </h4>
-                      <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 2 }}>
-                        {note.pages || '24 Pages'} • {note.author}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 3 }}>
+                        <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                          {note.pages || '24 Pages'} • {note.fileSize || 'PDF'} • {note.author}
+                        </span>
+                        {(note.fileUrl || note.driveUrl) && (
+                          <a 
+                            href={note.fileUrl || note.driveUrl}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ 
+                              fontSize: 10, 
+                              color: 'var(--color-accent-teal)', 
+                              fontWeight: 700, 
+                              textDecoration: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 3,
+                              background: 'var(--color-accent-teal-tint)',
+                              padding: '1px 6px',
+                              borderRadius: 4
+                            }}
+                          >
+                            <ExternalLink size={10} />
+                            <span>{note.driveUrl ? 'Drive लिंक' : 'PDF देखें'}</span>
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1837,64 +1874,330 @@ export function AdminPanel({
       {/* MODAL 2: UPLOAD NOTE / PDF */}
       {/* ========================================================= */}
       {showAddNoteModal && (
-        <ModalWrapper onClose={() => setShowAddNoteModal(false)} title={language === 'hi' ? 'नया नोट्स PDF जोड़ें' : 'Upload Study Material PDF'}>
+        <ModalWrapper 
+          onClose={() => {
+            setShowAddNoteModal(false);
+            setSelectedNoteFile(null);
+            setNoteDriveUrl('');
+            setNoteTitleInput('');
+          }} 
+          title={language === 'hi' ? '📚 नया नोट्स व PDF अपलोड करें' : 'Upload Study Material PDF'}
+        >
           <form onSubmit={(e) => {
             e.preventDefault();
-            const fd = new FormData(e.target);
+            const currentSubConfig = (SUBJECTS_BY_CLASS[noteModalClass] || []).find(s => s.id === noteModalSubject);
+            const resolvedSubjectName = noteModalSubject === 'other' 
+              ? (customSubjectText.trim() || 'General Arts') 
+              : (currentSubConfig ? getSubjectDisplayName(currentSubConfig, language) : (noteModalSubject || 'History'));
+
+            let generatedFileUrl = null;
+            if (noteUploadType === 'file' && selectedNoteFile) {
+              generatedFileUrl = URL.createObjectURL(selectedNoteFile);
+            } else if (noteUploadType === 'link' && noteDriveUrl.trim()) {
+              generatedFileUrl = noteDriveUrl.trim();
+            }
+
+            const badgeConfig = {
+              objective: { badge: '🎯 50/50 OMR वस्तुनिष्ठ', color: '#059669', formatType: 'objective' },
+              subjective: { badge: '📝 VVI विषयनिष्ठ नोट्स', color: '#2563EB', formatType: 'subjective' },
+              all: { badge: '📑 सम्पूर्ण चैप्टर नोट्स', color: '#0D9488', formatType: 'all' },
+              quick: { badge: '⚡ रैपिड रिवीज़न फॉर्मूला', color: '#D97706', formatType: 'all' }
+            }[noteCategoryBadge] || { badge: 'VVI नोट्स', color: '#0D9488', formatType: 'all' };
+
+            const finalTitle = noteTitleInput.trim() || 
+              (selectedNoteFile ? selectedNoteFile.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ') : `${resolvedSubjectName} हस्तलिखित नोट्स`);
+
             const newNote = {
               id: 'mat-' + Date.now(),
-              classId: fd.get('classId') || '12th',
-              subjectName: fd.get('subject') || 'History',
-              title: fd.get('title'),
-              pages: `${fd.get('pages') || '28'} Pages`,
-              fileSize: `${fd.get('fileSize') || '6.5'} MB`,
-              author: fd.get('author') || 'Prof. Anand Kumar',
-              formatType: fd.get('formatType') || 'all',
-              badge: fd.get('badge') || 'VVI नोट्स',
-              badgeColor: '#0D9488'
+              classId: noteModalClass,
+              subjectId: noteModalSubject,
+              subjectName: resolvedSubjectName,
+              title: finalTitle,
+              pages: `${notePagesInput || '28'} Pages`,
+              fileSize: `${noteFileSizeInput || '6.5'} MB`,
+              author: e.target.author?.value || 'Prof. Anand Kumar',
+              formatType: badgeConfig.formatType,
+              badge: badgeConfig.badge,
+              badgeColor: badgeConfig.color,
+              fileUrl: generatedFileUrl,
+              fileName: selectedNoteFile ? selectedNoteFile.name : null,
+              driveUrl: noteDriveUrl.trim() || null,
+              dateAdded: 'Just Now'
             };
+
             setNotesList(prev => [newNote, ...prev]);
             setShowAddNoteModal(false);
-            showToast(adminT.savedSuccess);
+            setSelectedNoteFile(null);
+            setNoteDriveUrl('');
+            setNoteTitleInput('');
+            showToast(language === 'hi' ? '✅ नोट्स सफलतापूर्वक लाइब्रेरी में प्रकाशित हो गया!' : 'Note published successfully to Library!');
           }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              
+              {/* UPLOAD METHOD TABS */}
               <div>
-                <label style={labelStyle}>{language === 'hi' ? 'कक्षा (Class)' : 'Class'}</label>
-                <select name="classId" style={inputStyle} defaultValue="12th">
+                <label style={labelStyle}>{language === 'hi' ? 'अपलोड माध्यम चुनें' : 'Upload Method'}</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setNoteUploadType('file')}
+                    style={{
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      border: noteUploadType === 'file' ? '2px solid var(--color-accent-teal)' : '1px solid var(--border-subtle)',
+                      background: noteUploadType === 'file' ? 'var(--color-accent-teal-tint)' : 'var(--bg-surface-subtle)',
+                      color: noteUploadType === 'file' ? 'var(--color-accent-teal)' : 'var(--text-secondary)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6
+                    }}
+                  >
+                    <UploadCloud size={14} />
+                    <span>{language === 'hi' ? 'डिवाइस से PDF' : 'Upload File'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setNoteUploadType('link')}
+                    style={{
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      border: noteUploadType === 'link' ? '2px solid var(--color-accent-teal)' : '1px solid var(--border-subtle)',
+                      background: noteUploadType === 'link' ? 'var(--color-accent-teal-tint)' : 'var(--bg-surface-subtle)',
+                      color: noteUploadType === 'link' ? 'var(--color-accent-teal)' : 'var(--text-secondary)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6
+                    }}
+                  >
+                    <Link2 size={14} />
+                    <span>{language === 'hi' ? 'Google Drive लिंक' : 'Drive / Web Link'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* OPTION 1: DEVICE FILE PICKER */}
+              {noteUploadType === 'file' && (
+                <div>
+                  <input
+                    id="teacherPdfPicker"
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+                          alert(language === 'hi' ? 'कृपया केवल PDF फाइल चुनें (.pdf)' : 'Please select a valid PDF file (.pdf)');
+                          return;
+                        }
+                        setSelectedNoteFile(file);
+                        const mb = (file.size / (1024 * 1024)).toFixed(1);
+                        setNoteFileSizeInput(mb);
+                        if (!noteTitleInput) {
+                          const autoName = file.name
+                            .replace(/\.pdf$/i, '')
+                            .replace(/[-_]/g, ' ')
+                            .replace(/\s+/g, ' ')
+                            .trim();
+                          setNoteTitleInput(autoName);
+                        }
+                      }
+                    }}
+                  />
+
+                  {selectedNoteFile ? (
+                    <div style={{
+                      padding: '12px 14px',
+                      borderRadius: 10,
+                      border: '1.5px solid var(--color-accent-teal)',
+                      background: 'rgba(13, 148, 136, 0.08)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 10
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                        <FileCheck size={24} color="var(--color-accent-teal)" style={{ flexShrink: 0 }} />
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {selectedNoteFile.name}
+                          </p>
+                          <span style={{ fontSize: 10, color: 'var(--color-accent-teal)', fontWeight: 600 }}>
+                            {noteFileSizeInput} MB • {language === 'hi' ? 'अपलोड के लिए तैयार ✓' : 'Ready to publish ✓'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('teacherPdfPicker').click()}
+                        style={{
+                          background: 'var(--bg-surface)',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: 6,
+                          padding: '4px 8px',
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {language === 'hi' ? 'बदलें' : 'Change'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => document.getElementById('teacherPdfPicker').click()}
+                      style={{
+                        border: '2px dashed var(--color-accent-teal)',
+                        borderRadius: 10,
+                        padding: '16px',
+                        textAlign: 'center',
+                        background: 'rgba(13, 148, 136, 0.03)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <UploadCloud size={28} color="var(--color-accent-teal)" style={{ margin: '0 auto 6px' }} />
+                      <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                        {language === 'hi' ? '📄 यहाँ क्लिक करके PDF फाइल चुनें' : 'Click to select PDF from device'}
+                      </p>
+                      <span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 2, display: 'block' }}>
+                        {language === 'hi' ? 'फोन या कंप्यूटर से .pdf फाइल (अधिकतम 50MB)' : '.pdf format, max 50MB'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* OPTION 2: GOOGLE DRIVE LINK */}
+              {noteUploadType === 'link' && (
+                <div>
+                  <label style={labelStyle}>{language === 'hi' ? 'Google Drive / वेब PDF लिंक' : 'Google Drive / Web PDF Link'}</label>
+                  <input
+                    type="url"
+                    value={noteDriveUrl}
+                    onChange={(e) => setNoteDriveUrl(e.target.value)}
+                    placeholder="https://drive.google.com/file/d/.../view"
+                    style={inputStyle}
+                  />
+                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 3, display: 'block' }}>
+                    {language === 'hi' 
+                      ? '💡 ड्राइव लिंक "Anyone with link can view" पर सेट होना चाहिए ताकि सभी छात्र बिना रुकावट डाउनलोड कर सकें।' 
+                      : 'Ensure Drive link sharing is set to "Anyone with the link can view".'}
+                  </span>
+                </div>
+              )}
+
+              {/* TARGET CLASS */}
+              <div>
+                <label style={labelStyle}>{language === 'hi' ? 'लक्षित कक्षा (Target Class)' : 'Target Class'}</label>
+                <select 
+                  value={noteModalClass} 
+                  onChange={(e) => {
+                    setNoteModalClass(e.target.value);
+                    const subList = SUBJECTS_BY_CLASS[e.target.value] || [];
+                    if (subList.length > 0) setNoteModalSubject(subList[0].id);
+                  }}
+                  style={inputStyle}
+                >
                   {CLASSES_CONFIG.map(c => (
                     <option key={c.id} value={c.id}>{getClassDisplayName(c, language)}</option>
                   ))}
                 </select>
               </div>
 
+              {/* SUBJECT SELECTOR */}
               <div>
                 <label style={labelStyle}>{language === 'hi' ? 'विषय (Subject)' : 'Subject'}</label>
-                <input name="subject" required placeholder="e.g. Political Science" style={inputStyle} defaultValue="History" />
+                <select 
+                  value={noteModalSubject} 
+                  onChange={(e) => setNoteModalSubject(e.target.value)} 
+                  style={inputStyle}
+                >
+                  {(SUBJECTS_BY_CLASS[noteModalClass] || []).map(sub => (
+                    <option key={sub.id} value={sub.id}>
+                      {getSubjectDisplayName(sub, language)} ({sub.name})
+                    </option>
+                  ))}
+                  <option value="other">{language === 'hi' ? '➕ अन्य विषय (Other Subject)' : '➕ Other Subject'}</option>
+                </select>
+                {noteModalSubject === 'other' && (
+                  <input
+                    value={customSubjectText}
+                    onChange={(e) => setCustomSubjectText(e.target.value)}
+                    placeholder={language === 'hi' ? 'विषय का नाम दर्ज करें' : 'Enter custom subject name'}
+                    style={{ ...inputStyle, marginTop: 6 }}
+                    required
+                  />
+                )}
               </div>
 
+              {/* NOTES TITLE */}
               <div>
-                <label style={labelStyle}>{language === 'hi' ? 'नोट्स शीर्षक (Title)' : 'Notes Title'}</label>
-                <input name="title" required placeholder="e.g. हड़प्पा सभ्यता: सम्पूर्ण हस्तलिखित नोट्स" style={inputStyle} />
+                <label style={labelStyle}>{language === 'hi' ? 'नोट्स का शीर्षक (Title)' : 'Notes Title'}</label>
+                <input 
+                  value={noteTitleInput} 
+                  onChange={(e) => setNoteTitleInput(e.target.value)}
+                  required 
+                  placeholder={language === 'hi' ? 'e.g. 12th इतिहास: हड़प्पा सभ्यता हस्तलिखित VVI नोट्स' : 'e.g. Harappan Civilization VVI Handwritten Notes'} 
+                  style={inputStyle} 
+                />
               </div>
 
+              {/* CATEGORY / EXAM TRACK */}
+              <div>
+                <label style={labelStyle}>{language === 'hi' ? 'श्रेणी / परीक्षा ट्रैक (Category Track)' : 'Category Track'}</label>
+                <select 
+                  value={noteCategoryBadge} 
+                  onChange={(e) => setNoteCategoryBadge(e.target.value)} 
+                  style={inputStyle}
+                >
+                  <option value="objective">🎯 50/50 OMR वस्तुनिष्ठ नोट्स (Objective Track)</option>
+                  <option value="subjective">📝 VVI विषयनिष्ठ मॉडल उत्तर (Subjective Track)</option>
+                  <option value="all">📑 सम्पूर्ण चैप्टर नोट्स (Full Chapter Notes)</option>
+                  <option value="quick">⚡ रैपिड रिवीज़न फॉर्मूला शीट (Formula & Mindmap)</option>
+                </select>
+              </div>
+
+              {/* PAGES & SIZE */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <div>
-                  <label style={labelStyle}>{language === 'hi' ? 'पृष्ठ संख्या' : 'Pages'}</label>
-                  <input name="pages" defaultValue="28" style={inputStyle} />
+                  <label style={labelStyle}>{language === 'hi' ? 'कुल पृष्ठ (Pages)' : 'Total Pages'}</label>
+                  <input 
+                    value={notePagesInput} 
+                    onChange={(e) => setNotePagesInput(e.target.value)} 
+                    style={inputStyle} 
+                  />
                 </div>
                 <div>
-                  <label style={labelStyle}>{language === 'hi' ? 'साइज (MB)' : 'File Size'}</label>
-                  <input name="fileSize" defaultValue="6.5" style={inputStyle} />
+                  <label style={labelStyle}>{language === 'hi' ? 'साइज (MB)' : 'File Size (MB)'}</label>
+                  <input 
+                    value={noteFileSizeInput} 
+                    onChange={(e) => setNoteFileSizeInput(e.target.value)} 
+                    style={inputStyle} 
+                  />
                 </div>
               </div>
 
+              {/* FACULTY / AUTHOR */}
               <div>
-                <label style={labelStyle}>{language === 'hi' ? 'लेखक / शिक्षक' : 'Faculty / Author'}</label>
+                <label style={labelStyle}>{language === 'hi' ? 'लेखक / शिक्षक (Faculty Author)' : 'Faculty / Author'}</label>
                 <input name="author" defaultValue="Prof. Anand Kumar" style={inputStyle} />
               </div>
 
               <button type="submit" className="btn-primary" style={{ width: '100%', padding: '12px', borderRadius: 10, fontSize: 13, marginTop: 4 }}>
-                <span>{language === 'hi' ? 'नोट्स प्रकाशित करें' : 'Save & Publish Note'}</span>
+                <span>{language === 'hi' ? '🚀 लाइब्रेरी में नोट्स प्रकाशित करें' : 'Publish to Student Library'}</span>
               </button>
             </div>
           </form>

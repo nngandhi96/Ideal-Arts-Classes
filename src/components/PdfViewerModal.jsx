@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Download, ZoomIn, ZoomOut, Share2, Check, Bookmark } from 'lucide-react';
+import { X, Download, ZoomIn, ZoomOut, Share2, Check, Bookmark, ExternalLink } from 'lucide-react';
 
 export function PdfViewerModal({ resource, onClose }) {
   const [zoomLevel, setZoomLevel] = useState(100);
@@ -142,6 +142,50 @@ export function PdfViewerModal({ resource, onClose }) {
             </div>
           )}
 
+          {(resource.fileUrl || resource.driveUrl) && (
+            <div style={{
+              margin: '12px 14px 0',
+              padding: '10px 12px',
+              borderRadius: 8,
+              background: 'rgba(13, 148, 136, 0.08)',
+              border: '1.5px solid var(--color-accent-teal)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 10
+            }}>
+              <div style={{ minWidth: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-accent-teal)', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  📄 {resource.fileName || `${resource.title}.pdf`}
+                </span>
+                <span style={{ fontSize: 10, color: '#64748B' }}>
+                  {resource.fileSize || 'PDF'} • मूल शिक्षक हस्तलिखित फाइल
+                </span>
+              </div>
+              <a
+                href={resource.fileUrl || resource.driveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: 'var(--color-accent-teal)',
+                  color: '#FFFFFF',
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  flexShrink: 0
+                }}
+              >
+                <Download size={12} />
+                <span>डाउनलोड</span>
+              </a>
+            </div>
+          )}
+
           <div style={{ padding: '16px', color: '#1E293B' }}>
             {resource.formatType === 'objective' ? (
               <div>
@@ -234,14 +278,18 @@ export function PdfViewerModal({ resource, onClose }) {
 
         <button
           onClick={() => {
+            const url = resource.fileUrl || resource.driveUrl;
+            if (url) {
+              window.open(url, '_blank', 'noopener,noreferrer');
+            }
             setIsSaved(true);
-            alert('Study material downloaded to offline storage!');
+            alert('Study material saved / ready for offline study!');
           }}
           className="btn-primary"
-          style={{ padding: '6px 14px', fontSize: 11, borderRadius: 8 }}
+          style={{ padding: '6px 14px', fontSize: 11, borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}
         >
           <Download size={13} />
-          <span>Save PDF</span>
+          <span>{resource.fileUrl || resource.driveUrl ? 'Download Original PDF' : 'Save PDF'}</span>
         </button>
       </div>
     </div>
